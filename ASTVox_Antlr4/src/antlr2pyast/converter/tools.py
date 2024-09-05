@@ -85,3 +85,59 @@ def list_to_node_or_tuple(
     ast_node = ast.Tuple(nodes, load_or_store)
 
   return ast_node
+
+# print an ANTLR4 tree node
+# this is a recursive function
+def print_a4ast_tree_node(node, level):
+  out_str = ""
+
+  # print indents
+  indent = "    "
+  for i in range(level):
+    out_str += indent
+
+  # print the tree node
+  #out_str += type(node).__name__
+  out_str += str(type(node))#.__name__
+
+  # Non-terminal nodes has more info and children to print
+  if not isinstance(node, antlr4.tree.Tree.TerminalNodeImpl):
+    out_str += "(Rule: " + str(node.getRuleIndex()) + ")"
+    out_str += "(children: " + str(len(node.children)) + ")"
+  else: # if terminal node, we need its type
+    out_str += ": " + node.getText()
+    out_str += str(node.symbol)
+
+  # print the output string
+  print(out_str)
+
+  # print children
+  for i in range(node.getChildCount()):
+    print_a4ast_tree_node(node.getChild(i), level+1)
+
+  return
+
+# print out an ANTLR4 AST tree
+def print_a4ast_tree(ast_tree):
+  print_a4ast_tree_node(ast_tree, 0)
+
+  return
+
+# functions to print Python AST tree
+def str_node(node):
+    if isinstance(node, ast.AST):
+        fields = [(name, str_node(val)) for name, val in ast.iter_fields(node) if name not in ('left', 'right')]
+        rv = '%s(%s' % (node.__class__.__name__, ', '.join('%s=%s' % field for field in fields))
+        return rv + ')'
+    else:
+        return repr(node)
+def ast_visit(node, level=0):
+    print('  ' * level + str_node(node))
+    for field, value in ast.iter_fields(node):
+        #print(field, "<xxxx>", value)
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, ast.AST):
+                    ast_visit(item, level=level+1)
+        elif isinstance(value, ast.AST):
+            ast_visit(value, level=level+1)
