@@ -43,7 +43,8 @@ if (args.cur_pos is None):
 try:
     cur_pos = int(args.cur_pos)
 except:
-    parser.print_help("Parameter -p/-cur-pos must be an integer")
+    print("Parameter -p/-cur-pos must be an integer")
+    parser.print_help()
     exit(1)
 
 lex_nav.find_cur_lexeme(args.stmt, cur_pos, args.verbose)

@@ -101,12 +101,15 @@ def print_a4ast_tree_node(node, level):
   out_str += str(type(node))#.__name__
 
   # Non-terminal nodes has more info and children to print
-  if not isinstance(node, antlr4.tree.Tree.TerminalNodeImpl):
+  if ((not isinstance(node, antlr4.tree.Tree.TerminalNodeImpl)) and
+      (node.children is not None)): # need this for partial statements
     out_str += "(Rule: " + str(node.getRuleIndex()) + ")"
     out_str += "(children: " + str(len(node.children)) + ")"
   else: # if terminal node, we need its type
     out_str += ": " + node.getText()
-    out_str += str(node.symbol)
+    if (hasattr(node, 'symbol') and
+        (node.symbol is not None)): # need this check for partial statements
+      out_str += str(node.symbol)
 
   # print the output string
   print(out_str)
