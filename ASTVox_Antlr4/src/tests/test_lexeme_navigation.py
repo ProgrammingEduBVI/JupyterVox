@@ -47,26 +47,26 @@ except:
     parser.print_help()
     exit(1)
 
-lex_nav.find_cur_lexeme(args.stmt, cur_pos, args.verbose)
+#lex_nav.find_cur_lexeme(args.stmt, cur_pos, args.verbose)
     
-# if args.command == "next":
-#     # find the start of next token
-#     next_token = token_navigation.next_token(args.stmt, cur_pos,
-#                                              args.verbose)
-#     print("Next token is", next_token)
-# elif args.command == "pre":
-#     # find the start of previous token
-#     prev_token = token_navigation.previous_token(args.stmt, cur_pos,
-#                                                  args.verbose)
-#     print("Previous token is", prev_token)
-# elif args.command == "cur":
-#     # find the start and end of current token
-#     cur_token = token_navigation.current_token_start_stop(args.stmt,
-#                                                           cur_pos,
-#                                                           args.verbose)
-#     print("Current token is", cur_token)
-# else:
-#     parser.print_help(f"Unknown command: args.command")
+if args.command == "next":
+    # find the start of next token
+    next_token = lex_nav.find_next_lexeme_token(args.stmt, cur_pos,
+                                                args.verbose)
+    print("Next lexem/token is", next_token)
+elif args.command == "pre":
+    # find the start of previous token
+    prev_token = lex_nav.find_prev_lexeme_token(args.stmt, cur_pos,
+                                                args.verbose)
+    print("Previous lexeme/token is", prev_token)
+elif args.command == "cur":
+    # find the start and end of current token
+    cur_token = lex_nav.find_lexeme_token_at_pos(args.stmt, cur_pos,
+                                                 args.verbose)
+    print("Current lexeme/token is", cur_token)
+else:
+    print(f"Unknown command: args.command")
+    parser.print_help()
     
 
     

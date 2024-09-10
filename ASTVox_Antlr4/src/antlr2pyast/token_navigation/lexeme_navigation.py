@@ -12,6 +12,10 @@ from converter import antlr2pyast
 from converter import tools
 import ast
 
+# import token navigation as a fallback solution for
+# unreadable lexema
+from . import token_navigation as tnav
+
 # add parent field for each tree node in PyAST tree
 def pyast_tree_link_parent(node, level=0):
     for field, value in ast.iter_fields(node):
@@ -221,18 +225,22 @@ def find_readable_antlr4_node(node, cur_pos):
   # failed to find the readable node
   return None
  
-# Find the uppermost-level ANTRL4 AST tree node of the lexeme at current cursor
-# position, given an ANTRL4 AST tree. From the tree node, it's possible to get
-# the lexeme text (getText method), start/stop tokens (start/stop fields), and
-# the corresponding PyAST tree (pyast_tree field).
-#
-# Input parameters:
-#   stmt: the statement to parse
-#   cur_pos: current cursor position in the statement
-# 
-# Return:
-#   uppermost-level ANTLR4 node for current lexeme
-def find_cur_lexeme(stmt, cur_pos, verbose=False):
+
+def find_cur_readable_lexeme(stmt, cur_pos, verbose=False):
+    '''
+    Find the uppermost-level ANTRL4 AST tree node of the lexeme at current
+    cursor position, given an ANTRL4 AST tree. From the tree node, it's possible
+    to get the lexeme text (getText method), start/stop tokens (start/stop
+    fields), and the corresponding PyAST tree (pyast_tree field).
+
+    Input parameters:
+       stmt: the statement to parse
+       cur_pos: current cursor position in the statement
+ 
+    Return:
+       uppermost-level ANTLR4 node for current readable lexeme
+
+    '''
     # parse the statement in to an ANTLR4 AST tree
     a4tree = antlr2pyast.generate_ast_tree(stmt)
 
@@ -267,6 +275,110 @@ def find_cur_lexeme(stmt, cur_pos, verbose=False):
     return readable_a4_node
 
 
+def find_lexeme_token_at_pos(stmt, pos, verbose=False):
+    '''
+    Find the readable lexeme at cursor position . If there is no readable
+    lexeme, return the current token.
+
+    Input parameters:
+    1. stmt: the statement to parse
+    2. cur_pos: current cursor position in the statement
+ 
+    Return a dictionary:
+    1. "is_lexeme": True, if return readable lexeme, False if return
+    2. "a4node": if returns lexeme, this is the ANTRL4 tree node with PyAST tree
+    3. "text": text of the token or lexeme
+    4. "start": the beginning cursor position of returned token/lexeme
+    5. "stop": the ending cursor position of returned token/lexeme
+    '''
+
+    ret_dict = {}
+    
+    # try to find the readable lexeme
+    a4node = find_cur_readable_lexeme(stmt, pos, verbose)
+
+    if a4node is not None:
+        # found the readable lexeme
+        ret_dict["is_lexeme"] = True
+        ret_dict["a4node"] = a4node
+        ret_dict["text"] = a4node.getText()
+        ret_dict["start"] = a4node.start.start
+        ret_dict["stop"] = a4node.stop.stop
+    else:
+        # failed to find readable lexeme, try to find the token
+        cur_token = tnav.current_token_start_stop(stmt, pos, verbose)
+        ret_dict["is_lexeme"] = False
+        ret_dict["a4node"] = None
+        ret_dict["text"] = cur_token["text"]
+        ret_dict["start"] = cur_token["start"]
+        ret_dict["stop"] = cur_token["stop"]
+
+    return ret_dict
+
+def find_next_lexeme_token(stmt, pos, verbose):
+    '''
+    Find the start of next lexeme/token from cursor position "pos". This is
+    essentially just return the position of next non-space character from
+    current lexeme/token.
+
+    Input parameters:
+    1. stmt: the statement to parse
+    2. cur_pos: current cursor position in the statement
+    3. verbose: enable verbose print output
+ 
+    Return a dictionary:
+    1. "is_lexeme": True, if return readable lexeme, False if return
+    2. "a4node": if returns lexeme, this is the ANTRL4 tree node with PyAST tree
+    3. "text": if returns token, this is the text of the token
+    4. "start": the beginning cursor position of returned token/lexeme
+    5. "stop": the ending cursor position of returned token/lexeme
+    '''
+
+    # find the lexeme/token at pos
+    ret = find_lexeme_token_at_pos(stmt, pos, verbose)
+
+    # move the cursor position to next non-space character
+    p = ret["stop"] + 1 # need this in case current lexeme/token is the last
+    for p in range(ret["stop"] + 1, len(stmt)):
+        if stmt[p] != ' ':
+            break
+        
+    # return the lexeme/token at p
+    return find_lexeme_token_at_pos(stmt, p, verbose)
+
+def find_prev_lexeme_token(stmt, pos, verbose):
+    '''
+    Find the start of previous lexeme/token from cursor position "pos".
+
+    This is essentially jump to the position of the last non-space character
+    before current lexeme/token. Then find the start of the lexeme/token at
+    this non-space character.
+
+    Input parameters:
+    1. stmt: the statement to parse
+    2. cur_pos: current cursor position in the statement
+    3. verbose: enable verbose print output
+ 
+    Return a dictionary:
+    1. "is_lexeme": True, if return readable lexeme, False if return
+    2. "a4node": if returns lexeme, this is the ANTRL4 tree node with PyAST tree
+    3. "text": if returns token, this is the text of the token
+    4. "start": the beginning cursor position of returned token/lexeme
+    5. "stop": the ending cursor position of returned token/lexeme
+    '''
+
+    # find the lexeme/token at pos
+    ret = find_lexeme_token_at_pos(stmt, pos, verbose)
+
+    # move the cursor position to last non-space character before
+    # current lexeme starts
+    p = ret["start"] - 1 # need this in case current lexeme/token is the first
+    for p in range(ret["start"] - 1, -1, -1):
+        if stmt[p] != ' ':
+            break
+
+    # return the lexeme/token at p
+    return find_lexeme_token_at_pos(stmt, p, verbose)
 
 ################################################################################
 # Old code
