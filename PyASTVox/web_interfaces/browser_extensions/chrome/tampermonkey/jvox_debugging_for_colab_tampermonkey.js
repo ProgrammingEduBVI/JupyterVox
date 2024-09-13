@@ -12,13 +12,17 @@
 
 console.log("JVox Debgging plugin start.");
 
+// create a common Audio object to read error messages
+let a = new Audio();
+let reading_rate = 2;
+
 // Use Google Text-to-Speech (TTS) to talk
 function jvox_gtts_speak(text, lang){
-    let a = new Audio();
     let url= `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${text}`;
     // add the sound to the audio element
     a.src = url;
     //For auto playing the sound
+    a.playbackRate = reading_rate;
     a.play();
 }
 
