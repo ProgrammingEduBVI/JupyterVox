@@ -75,6 +75,21 @@ def token_navigation():
     return jsonify(dat)
 
 
+@app.route('/singlelinecheck',methods=['POST'])
+def single_line_check():
+    # retrieve the statement to check
+    stmt = request.json['stmt']
+    print("Web single line check get statement:", stmt)
+
+    # check the statement
+    ret_msg = jvox.single_line_parsing_check(stmt, True)
+    # return the error message or correct confirmation message
+    dat = {"message":ret_msg}
+
+    return jsonify(dat)
+    
+
+
 if __name__ == "__main__":
     jvox = jvox_interface.jvox_interface("default")
     print("hello jvox:", jvox)
