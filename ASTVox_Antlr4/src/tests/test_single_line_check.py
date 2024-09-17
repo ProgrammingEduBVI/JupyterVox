@@ -30,6 +30,7 @@ if (args.stmt is None):
     parser.print_help()
 
 # check if stmt is correct
+args.stmt = "print(\'x)\n"
 ret = one_chk.single_line_parsing_check(args.stmt, args.verbose)
 print(ret)
         

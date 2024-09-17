@@ -87,7 +87,6 @@ def single_line_check():
     dat = {"message":ret_msg}
 
     return jsonify(dat)
-    
 
 
 if __name__ == "__main__":

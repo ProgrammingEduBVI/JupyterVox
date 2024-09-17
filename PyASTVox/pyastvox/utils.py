@@ -8,8 +8,6 @@ def str_node(node):
         return rv + ')'
     else:
         return repr(node)
-
-
     
 def ast_visit(node, level=0):
     print('  ' * level + str_node(node))

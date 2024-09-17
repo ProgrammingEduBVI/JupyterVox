@@ -102,6 +102,19 @@ class JVox_Single_Line_Error_Listener(ErrorListener.ErrorListener):
         raise JVoxOtherParsingError("reportContextSensitivity")
 
 
+def make_punc_readable(msg):
+    '''
+    Makes certain punctuation marks readable in error mssages
+    '''
+    
+    # make '(' to 'left paren'
+    msg = msg.replace("\'(\'", "\'left paren\'")
+    
+    # make ')' to 'right paren'
+    msg = msg.replace("\')\'", "\'right paren\'")
+    
+    return msg
+    
 def single_line_parsing_check(stmt, verbose=True):
     '''
     Check if a single line of Python statement parsing is correct or not.
@@ -158,6 +171,9 @@ def single_line_parsing_check(stmt, verbose=True):
         # real parsing error
         ret.error_no = 3
         ret.error_msg = e.message
+
+    # correct the reading of punctuation marks in the error message
+    ret.error_msg = make_punc_readable(ret.error_msg)
 
     # done, return
     return ret

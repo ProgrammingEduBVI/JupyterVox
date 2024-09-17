@@ -99,9 +99,10 @@ class jvox_interface:
 
         # generate the speech to be returned to the user
         if check_result.error_no == 0:
-            ret_msg = "No syntax error."
+            ret_msg = "There is no syntax error."
         elif check_result.error_no == 1:
-            ret_msg = "No syntax error, but this line is a partial statement."
+            ret_msg = ("There is no syntax error, " + 
+                       "but this line is a partial statement.")
         elif check_result.error_no == 2:
             ret_msg = "Syntax error: " + check_result.error_msg
         elif check_result.error_no == 3:
