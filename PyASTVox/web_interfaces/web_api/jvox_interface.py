@@ -14,6 +14,7 @@ sys.path.append("../../../ASTVox_Antlr4/src/antlr2pyast/")
 
 # other system packages
 import traceback
+import types
 
 # load the Vox parser utilities
 import utils
@@ -27,6 +28,7 @@ from token_navigation import lexeme_navigation as lex_nav
 
 # import single line parsing checking packages
 from debug_support import single_line_check as one_chk
+from debug_support import code_snippet_check as snippet_chk
 
 class jvox_interface:
     vox_gen = None;
@@ -109,5 +111,19 @@ class jvox_interface:
             ret_msg = "Other parsing error: " + check_result.error_msg
 
         return ret_msg
+
+    # check the syntax of a code snippet
+    # returns the error message, line number, and column number
+    def code_snippet_parsing_check(self, stmts, verbose):
+        # check the statements
+        check_ret = snippet_chk.code_snippet_syntax_check(stmts, verbose)
+
+        # create the return object
+        ret_val = types.SimpleNamespace()
+        ret_val.msg = check_ret.error_msg
+        ret_val.line_no = check_ret.line_no
+        ret_val.offset = check_ret.offset
+
+        return ret_val
 
         

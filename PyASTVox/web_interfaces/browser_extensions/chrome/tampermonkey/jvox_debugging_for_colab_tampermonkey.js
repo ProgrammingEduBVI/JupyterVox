@@ -8,9 +8,13 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=google.com
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
+// @connect      3.144.13.232
 // ==/UserScript==
 
 console.log("JVox Debgging plugin start.");
+
+var server_url = "http://3.144.13.232/jvox";
+//var server_url = "http://localhost:5000/";
 
 // create a common Audio object to read error messages
 let a = new Audio();
@@ -44,7 +48,7 @@ function jvox_read_marker_message(marker){
         text_to_read = text_to_read + ". Detected at line " + lineno_str
     }
     // play the message
-    jvox_gtts_speak(text_to_read, "en");
+    jvox_gtts_speak(text_to_read, "en-US");
 
     return;
 }
@@ -112,6 +116,70 @@ function jvox_jump_to_error_line(marker, uri){
 
 }
 
+
+// find the text of the line at the cursor
+function jvox_get_cursor_line(){
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    let i = 0;
+    let len = editors.length
+    let line = ""
+    for(i = 0; i < len ; i++){
+       let e = editors[i];
+       //console.log(e)
+       if (e.hasTextFocus()){
+           //console.log("has focus")
+           //console.log(e.getValue())
+           //console.log(e.getPosition())
+
+           let line_nu = e.getPosition().lineNumber;
+           let cell_txt = e.getValue();
+           let cell_txtArr = cell_txt.split('\n');
+           line = cell_txtArr[line_nu-1];
+
+           console.log("Line on cursor:" + line);
+       }
+    }
+
+    return line;
+}
+
+function jvox_syntax_check_current_line(){
+    console.log("Syntax check for current line")
+
+    // obtain the text of current line
+    let stmt_text = jvox_get_cursor_line();
+
+    console.log("Contacting server to parsing check line: " + stmt_text)
+
+    let surl = server_url + "/singlelinecheck";
+
+    // send request to server to obtain speech mp3 file/blob as response
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: surl,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        responseType: "json",
+        data: JSON.stringify({"stmt":stmt_text}),
+        onload: function(response) {
+            console.log(response.responseType);
+            console.log(response.response);
+            console.log(response.response.message);
+
+            // read the message
+            jvox_gtts_speak(response.response.message, "en-US");
+
+        },
+        onerror: function (response) {
+            console.error("JVox syntax check HTTP error:" + response.statusText);
+        }
+    });
+
+    return;
+}
+
 function jvox_OnDidCreateEditor(editor){
     console.log("jvox: create editor")
     console.log(editor)
@@ -139,11 +207,22 @@ function doc_keyUp(e) {
         console.log("JVox: got alt+ctrl+s")
         read_error_immd = !read_error_immd;
         console.log("JVox: automatic error reading is: ", read_error_immd);
+        if (read_error_immd){
+            jvox_gtts_speak("Automatic error reading is on.", "en-US")
+        }
+        else{
+            jvox_gtts_speak("Automatic error reading is off.", "en-US")
+        }
     }
     else if (e.altKey && e.ctrlKey && e.code === 'KeyL') {
         // read last error marker's message
         console.log("JVox: reading last error.")
         jvox_read_marker_message(last_error_marker);
+    }
+    else if (e.altKey && e.ctrlKey && e.code === 'KeyC') {
+        // read last error marker's message
+        console.log("JVox: reading last error.")
+        jvox_syntax_check_current_line();
     }
 }
 

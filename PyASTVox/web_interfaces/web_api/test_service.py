@@ -88,6 +88,19 @@ def single_line_check():
 
     return jsonify(dat)
 
+@app.route('/snippetsyntaxcheck',methods=['POST'])
+def snippet_syntax_check():
+    # retrieve the statement to check
+    stmts = request.json['stmts']
+    print("Web single line check get statements:", stmts)
+
+    # check the statement
+    ret = jvox.code_snippet_parsing_check(stmts, True)
+    # return the error message or correct confirmation message
+    dat = {"message":ret.msg, "line_no":ret.line_no, "offset":ret.offset}
+
+    return jsonify(dat)
+
 
 if __name__ == "__main__":
     jvox = jvox_interface.jvox_interface("default")

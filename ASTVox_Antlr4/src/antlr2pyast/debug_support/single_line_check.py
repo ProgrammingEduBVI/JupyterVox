@@ -1,5 +1,5 @@
 '''
-Code for checking if a simple line Python is correct or not.
+Code for checking if a simple line of Python statement is correct or not.
 Partially complete statement is consider as correct, e.g. "if a>b:"
 '''
 
@@ -122,10 +122,12 @@ def single_line_parsing_check(stmt, verbose=True):
     Input:
         1. stmt: the one line statement
         2. verbose: enable verbose output
-    Returns a dict with the following fields:
+    Returns a SimpleNamespace object:
         1. error_msg
         2. error_no: 0 - correct, no error; 1 - partial correct;
                      2 - syntax error; 3 - other parsing error
+        3. orig_exception: For real syntax error, this is the SyntaxError
+                           exception from Python AST parsing
     '''
 
     # create the ANTLR4 parser class
