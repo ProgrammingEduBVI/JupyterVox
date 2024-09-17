@@ -128,7 +128,7 @@ def single_line_parsing_check(stmt, verbose=True):
     parser.addErrorListener(JVox_Single_Line_Error_Listener(verbose))
 
     # parse and handle the error
-    ret = {}
+    ret = {} # should use SimpleNamespace, see https://stackoverflow.com/a/41765294
     ret["error_no"] = 0 # being optimistic, assuming no error
     ret["error_msg"] = ""
     try:
