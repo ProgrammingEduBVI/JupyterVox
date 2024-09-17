@@ -108,9 +108,84 @@ function jvox_jump_to_error_line(marker, uri){
            console.log("JVox: found last error cell: ", cell)
            cell.setPosition({lineNumber: marker.startLineNumber, column: 0});
            cell.focus();
+
+           // sound report to user
+            let msg = "jumped to the beginning of error line " + marker.startLineNumber
+            jvox_gtts_speak(msg, "en-US");
+
            break;
        }
     }
+
+    if (i == len){
+        // failed to find the cell, quit
+        console.log("JVox: when jumping to error line, failed to find the error cell");
+    }
+
+    return null;
+
+}
+
+// jump the error line for uri's (cell's) error marker
+function jvox_jump_to_error_column(marker, uri){
+    console.log("JVox: jumping to last error site (line and column)")
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    // find the cell that causing the error
+    let i = 0;
+    let len = editors.length
+    let error_cell = editors[0]
+    for(i = 0; i < len ; i++){
+       let cell = editors[i];
+       if (cell.getModel().uri == uri){
+           console.log("JVox: found last error cell: ", cell)
+           error_cell = cell
+           break;
+       }
+    }
+
+    if (i == len){
+        // failed to find the cell, quit
+        console.log("JVox: when jumping to error line/col, failed to find the error cell");
+
+        return;
+    }
+
+    // get cell text
+    let stmts = error_cell.getValue();
+
+    // send the cell code to server to check, so that we can get both line and col number
+    let surl = server_url + "/snippetsyntaxcheck";
+
+    // send request to server to obtain speech mp3 file/blob as response
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: surl,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        responseType: "json",
+        data: JSON.stringify({"stmts":stmts}),
+        onload: function(response) {
+            console.log(response.responseType);
+            console.log(response.response);
+            console.log(response.response.message);
+
+            // jump to the line and column
+            error_cell.setPosition({lineNumber: response.response.line_no,
+                                    column: response.response.offset});
+            error_cell.focus();
+
+            // sound report to user
+            let msg = ("jumped to error at line " + response.response.line_no.toString() +
+                       ", column " + response.response.offset)
+            jvox_gtts_speak(msg, "en-US");
+
+        },
+        onerror: function (response) {
+            console.error("JVox syntax check HTTP error:" + response.statusText);
+        }
+    });
 
     return null;
 
@@ -208,10 +283,10 @@ function doc_keyUp(e) {
         read_error_immd = !read_error_immd;
         console.log("JVox: automatic error reading is: ", read_error_immd);
         if (read_error_immd){
-            jvox_gtts_speak("Automatic error reading is on.", "en-US")
+            jvox_gtts_speak(". Automatic error reading is on.", "en-US")
         }
         else{
-            jvox_gtts_speak("Automatic error reading is off.", "en-US")
+            jvox_gtts_speak(". Automatic error reading is off.", "en-US")
         }
     }
     else if (e.altKey && e.ctrlKey && e.code === 'KeyL') {
@@ -221,8 +296,13 @@ function doc_keyUp(e) {
     }
     else if (e.altKey && e.ctrlKey && e.code === 'KeyC') {
         // read last error marker's message
-        console.log("JVox: reading last error.")
+        console.log("JVox: Single line syntax check.")
         jvox_syntax_check_current_line();
+    }
+    else if (e.altKey && e.ctrlKey && e.code === 'KeyG') {
+        // read last error marker's message
+        console.log("JVox: jump to the line and column of last error.")
+        jvox_jump_to_error_column(last_error_marker, last_error_uri);
     }
 }
 
