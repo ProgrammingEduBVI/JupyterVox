@@ -3,6 +3,9 @@ Code for checking if a simple line Python is correct or not.
 Partially complete statement is consider as correct, e.g. "if a>b:"
 '''
 
+# system packages
+import types # for SimpleNamespace
+
 # antlr4 packages
 import antlr4
 from antlr_parser.Python3Lexer import Python3Lexer
@@ -128,9 +131,9 @@ def single_line_parsing_check(stmt, verbose=True):
     parser.addErrorListener(JVox_Single_Line_Error_Listener(verbose))
 
     # parse and handle the error
-    ret = {} # should use SimpleNamespace, see https://stackoverflow.com/a/41765294
-    ret["error_no"] = 0 # being optimistic, assuming no error
-    ret["error_msg"] = ""
+    ret = types.SimpleNamespace()
+    ret.error_no = 0 # being optimistic, assuming no error
+    ret.error_msg = ""
     try:
         tree = parser.single_input()
     except JVoxIncompleteSyntaxError as e:
@@ -140,20 +143,21 @@ def single_line_parsing_check(stmt, verbose=True):
             pass
         else:
             # incomplete statement, but parse correctly so far
-            ret["error_no"] = 1
-            ret["error_msg"] = e.original_msg
+            ret.error_no = 1
+            ret.error_msg = e.original_msg
     except JVoxRealSyntaxError as e:
         # real parsing error
-        ret["error_no"] = 2
+        ret.error_no = 2
         # for real parsing error, return Python's own parsing error message
         try:
-            ast.parse(stmt, filename="")
+            ast.parse(stmt, filename="JVoxDummyFile")
         except Exception as e2: # should be a SyntaxError type exception 
-            ret["error_msg"] = str(e2)
+            ret.error_msg = str(e2.msg) + ", from column " + str(e2.offset)
+            ret.orig_exception = e2
     except JVoxOtherParsingError as e:
         # real parsing error
-        ret["error_no"] = 3
-        ret["error_msg"] = e.message
+        ret.error_no = 3
+        ret.error_msg = e.message
 
     # done, return
     return ret

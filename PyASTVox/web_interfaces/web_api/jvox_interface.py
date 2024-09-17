@@ -98,14 +98,14 @@ class jvox_interface:
         check_result = one_chk.single_line_parsing_check(stmt, verbose)
 
         # generate the speech to be returned to the user
-        if check_result["error_no"] == 0:
+        if check_result.error_no == 0:
             ret_msg = "No syntax error."
-        elif check_result["error_no"] == 1:
-            ret_msg = "No syntax error, but the line is a partial statement."
-        elif check_result["error_no"] == 2:
-            ret_msg = "Syntax error: " + check_result["error_msg"]
-        elif check_result["error_no"] == 3:
-            ret_msg = "Other parsing error: " + check_result["error_msg"]
+        elif check_result.error_no == 1:
+            ret_msg = "No syntax error, but this line is a partial statement."
+        elif check_result.error_no == 2:
+            ret_msg = "Syntax error: " + check_result.error_msg
+        elif check_result.error_no == 3:
+            ret_msg = "Other parsing error: " + check_result.error_msg
 
         return ret_msg
 
