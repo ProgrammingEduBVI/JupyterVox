@@ -123,6 +123,7 @@ class jvox_interface:
         ret_val.msg = check_ret.error_msg
         ret_val.line_no = check_ret.line_no
         ret_val.offset = check_ret.offset
+        ret_val.error_no = check_ret.error_no
 
         return ret_val
 

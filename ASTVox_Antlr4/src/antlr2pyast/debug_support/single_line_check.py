@@ -19,6 +19,9 @@ import ast
 # Error listener support for ANTLR4
 from antlr4.error import ErrorListener
 
+# import sibling packages
+from . import utils as debug_utils
+
 # Custom exception for JVox parsing
 class JVoxRealSyntaxError(SyntaxError):
     '''
@@ -102,18 +105,19 @@ class JVox_Single_Line_Error_Listener(ErrorListener.ErrorListener):
         raise JVoxOtherParsingError("reportContextSensitivity")
 
 
-def make_punc_readable(msg):
+def add_prefix_for_dangling_elif(stmt):
     '''
-    Makes certain punctuation marks readable in error mssages
+    Add an "if" part if the input is a line of "elif" stmt.
+
+    Need to do this because elif cannot be parsed by itself
     '''
-    
-    # make '(' to 'left paren'
-    msg = msg.replace("\'(\'", "\'left paren\'")
-    
-    # make ')' to 'right paren'
-    msg = msg.replace("\')\'", "\'right paren\'")
-    
-    return msg
+
+    # this is the dummy "if" part to be added
+    dummy_if = "if 5>4: return;\n"
+    # add it before "elif" stmt
+    stmt = dummy_if + stmt
+
+    return stmt
     
 def single_line_parsing_check(stmt, verbose=True):
     '''
@@ -129,6 +133,14 @@ def single_line_parsing_check(stmt, verbose=True):
         3. orig_exception: For real syntax error, this is the SyntaxError
                            exception from Python AST parsing
     '''
+
+    # remove leading spaces. These will cause ANTRL4 to accept the input. Not
+    # sure why.
+    stmt = stmt.lstrip()
+
+    # special treatment for partial statements: "elif"
+    if stmt.startswith("elif"):
+        stmt = add_prefix_for_dangling_elif(stmt)
 
     # create the ANTLR4 parser class
     input_stream = antlr4.InputStream(stmt)
@@ -175,7 +187,7 @@ def single_line_parsing_check(stmt, verbose=True):
         ret.error_msg = e.message
 
     # correct the reading of punctuation marks in the error message
-    ret.error_msg = make_punc_readable(ret.error_msg)
+    ret.error_msg = debug_utils.make_punc_readable(ret.error_msg)
 
     # done, return
     return ret

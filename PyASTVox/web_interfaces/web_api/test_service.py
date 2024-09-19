@@ -97,10 +97,10 @@ def snippet_syntax_check():
     # check the statement
     ret = jvox.code_snippet_parsing_check(stmts, True)
     # return the error message or correct confirmation message
-    dat = {"message":ret.msg, "line_no":ret.line_no, "offset":ret.offset}
+    dat = {"message":ret.msg, "line_no":ret.line_no, "offset":ret.offset,
+           "error_no":ret.error_no}
 
     return jsonify(dat)
-
 
 if __name__ == "__main__":
     jvox = jvox_interface.jvox_interface("default")

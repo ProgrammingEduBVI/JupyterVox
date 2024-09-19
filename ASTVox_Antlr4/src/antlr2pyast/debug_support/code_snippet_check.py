@@ -15,19 +15,8 @@ from converter import antlr2pyast
 from converter import tools
 import ast
 
-def make_punc_readable(msg):
-    '''
-    Makes certain punctuation marks readable in error mssages
-    '''
-    
-    # make '(' to 'left paren'
-    msg = msg.replace("\'(\'", "\'left paren\'")
-    
-    # make ')' to 'right paren'
-    msg = msg.replace("\')\'", "\'right paren\'")
-    
-    return msg
-
+# import sibling packages
+from . import utils as debug_utils
 
 def code_snippet_syntax_check(stmts, verbose=True):
     '''
@@ -41,23 +30,33 @@ def code_snippet_syntax_check(stmts, verbose=True):
         2. line_no: line number of error site
         3. offset: column number of error site
         4. orig_exception: original SyntaxError exception
+        5. error_no: 0: correct, no error; 1: syntax error
     '''
 
     # parse and handle the error
     ret = types.SimpleNamespace()
     ret.error_no = 0 # being optimistic, assuming no error
     ret.error_msg = ""
+
     try:
         tree = ast.parse(stmts)
     except SyntaxError as e:
+        ret.error_no = True
         # handle the syntax errors
-        ret.error_msg = str(e.msg) + ", from column " + str(e.offset) 
+        ret.error_msg = str(e.msg) + ", from column " + str(e.offset)
+        # correct the reading of punctuation marks in the error message
+        ret.error_msg = debug_utils.make_punc_readable(ret.error_msg)
+        # record line information
         ret.line_no = e.lineno
         ret.offset = e.offset
         ret.orig_exception = e
     
-    # correct the reading of punctuation marks in the error message
-    ret.error_msg = make_punc_readable(ret.error_msg)
+    if ret.error_no == 0:
+        # code snippet is correct
+        ret.error_msg = "Code snippet syntax is correct"
+        ret.line_no = 1
+        ret.orig_exception = None
+        ret.offset = 1
 
     # done, return
     return ret
