@@ -16,9 +16,25 @@ console.log("JVox Debgging plugin start.");
 var server_url = "http://3.144.13.232/jvox";
 //var server_url = "http://localhost:5000/";
 
+// function to replace punctuation marks with its actual text name
+// so that text-to-speech will not ignore them
+function jvox_make_puncs_readable(msg){
+    console.log("xxx", msg)
+    // make '(' readable
+    msg = msg.replace("\'(\'", "\'left paren\'");
+
+    // make ')' readable
+    msg = msg.replace("\')\'", "\'right paren\'");
+
+    // make ':' readable
+    msg = msg.replace("\':\'", "\'colon\'");
+
+    return msg;
+}
+
 // create a common Audio object to read error messages
 let a = new Audio();
-let reading_rate = 2;
+let reading_rate = 1.5;
 
 // Use Google Text-to-Speech (TTS) to talk
 function jvox_gtts_speak(text, lang){
@@ -48,6 +64,7 @@ function jvox_read_marker_message(marker){
         text_to_read = text_to_read + ". Detected at line " + lineno_str
     }
     // play the message
+    text_to_read = jvox_make_puncs_readable(text_to_read)
     jvox_gtts_speak(text_to_read, "en-US");
 
     return;
@@ -170,6 +187,7 @@ function jvox_jump_to_error_column(marker, uri){
             console.log(response.responseType);
             console.log(response.response);
             console.log(response.response.message);
+            console.log(response.response.error_no);
 
             // jump to the line and column
             error_cell.setPosition({lineNumber: response.response.line_no,
@@ -177,9 +195,18 @@ function jvox_jump_to_error_column(marker, uri){
             error_cell.focus();
 
             // sound report to user
-            let msg = ("jumped to error at line " + response.response.line_no.toString() +
-                       ", column " + response.response.offset)
-            jvox_gtts_speak(msg, "en-US");
+            if (response.response.error_no != 0){
+                // does have error
+                let msg = ("jumped to error line " + response.response.line_no.toString() +
+                       ", column " + response.response.offset.toString())
+                jvox_gtts_speak(msg, "en-US");
+            }
+            else{
+                // no error in current snippet
+                let msg = ("NO syntax error, but jumped to line " + response.response.line_no.toString() +
+                       ", column " + response.response.offset.toString())
+                jvox_gtts_speak(msg, "en-US");
+            }
 
         },
         onerror: function (response) {
