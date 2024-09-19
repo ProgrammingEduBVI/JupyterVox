@@ -161,6 +161,8 @@ def single_line_parsing_check(stmt, verbose=True):
     ret = types.SimpleNamespace()
     ret.error_no = 0 # being optimistic, assuming no error
     ret.error_msg = ""
+    ret.offset = 1 # dummy offset
+    
     try:
         tree = parser.single_input()
     except JVoxIncompleteSyntaxError as e:
@@ -172,6 +174,7 @@ def single_line_parsing_check(stmt, verbose=True):
             # incomplete statement, but parse correctly so far
             ret.error_no = 1
             ret.error_msg = e.original_msg
+            ret.offset = 1 # dummy offset
     except JVoxRealSyntaxError as e:
         # real parsing error
         ret.error_no = 2
@@ -180,11 +183,13 @@ def single_line_parsing_check(stmt, verbose=True):
             ast.parse(stmt, filename="JVoxDummyFile")
         except Exception as e2: # should be a SyntaxError type exception 
             ret.error_msg = str(e2.msg) + ", from column " + str(e2.offset)
+            ret.offset = e2.offset
             ret.orig_exception = e2
     except JVoxOtherParsingError as e:
         # real parsing error
         ret.error_no = 3
         ret.error_msg = e.message
+        ret.offset = 1 # dummy offset
 
     # correct the reading of punctuation marks in the error message
     ret.error_msg = debug_utils.make_punc_readable(ret.error_msg)

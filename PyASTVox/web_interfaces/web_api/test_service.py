@@ -82,9 +82,9 @@ def single_line_check():
     print("Web single line check get statement:", stmt)
 
     # check the statement
-    ret_msg = jvox.single_line_parsing_check(stmt, True)
+    ret_val = jvox.single_line_parsing_check(stmt, True)
     # return the error message or correct confirmation message
-    dat = {"message":ret_msg}
+    dat = {"message":ret_val.msg, "offset":ret_val.offset}
 
     return jsonify(dat)
 
