@@ -134,6 +134,11 @@ def single_line_parsing_check(stmt, verbose=True):
                            exception from Python AST parsing
     '''
 
+    # Count how many leading spaces are there, we will remove them when checking syntax. but after checking, we need to adjust the offset for these removed spaces
+    leading_space_count = 0
+    while (stmt[leading_space_count] == ' '):
+        leading_space_count += 1
+    
     # remove leading spaces. These will cause ANTRL4 to accept the input. Not
     # sure why.
     stmt = stmt.lstrip()
@@ -183,7 +188,8 @@ def single_line_parsing_check(stmt, verbose=True):
             ast.parse(stmt, filename="JVoxDummyFile")
         except Exception as e2: # should be a SyntaxError type exception 
             ret.error_msg = str(e2.msg) + ", from column " + str(e2.offset)
-            ret.offset = e2.offset
+            # Get the offset number. Need to adjust for removed spaces
+            ret.offset = e2.offset + leading_space_count 
             ret.orig_exception = e2
     except JVoxOtherParsingError as e:
         # real parsing error
