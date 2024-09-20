@@ -61,8 +61,8 @@ class JVox_Single_Line_Error_Listener(ErrorListener.ErrorListener):
     
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
         if offendingSymbol.type == -1:
-            # -1 is EOF, statement terminated early. not a real parsing error.
-            # Raise JVoxIncompleteSyntaxError
+            # -1 is EOF, statement terminated early. May not be a real parsing
+            # error.  Raise JVoxIncompleteSyntaxError
             if self.verbose:
                 print("Single line checker: incomplete parsing error:", msg)
             e = JVoxIncompleteSyntaxError("Incomplete statement")
@@ -123,6 +123,12 @@ def single_line_parsing_check(stmt, verbose=True):
     '''
     Check if a single line of Python statement parsing is correct or not.
 
+    Note that some statement can be correct even it is just partially
+    completely, e.g. "elif a>b:" is a perfectly OK one line statement
+
+    However, some partial statement can still be wrong. e.g., "[1,2,",
+    is a wrong partial statement, it should be closed with ']'.
+
     Input:
         1. stmt: the one line statement
         2. verbose: enable verbose output
@@ -132,9 +138,12 @@ def single_line_parsing_check(stmt, verbose=True):
                      2 - syntax error; 3 - other parsing error
         3. orig_exception: For real syntax error, this is the SyntaxError
                            exception from Python AST parsing
+
     '''
 
-    # Count how many leading spaces are there, we will remove them when checking syntax. but after checking, we need to adjust the offset for these removed spaces
+    # Count how many leading spaces are there, we will remove them when checking
+    # syntax. but after checking, we need to adjust the offset for these removed
+    # spaces
     leading_space_count = 0
     while (stmt[leading_space_count] == ' '):
         leading_space_count += 1
@@ -165,7 +174,7 @@ def single_line_parsing_check(stmt, verbose=True):
     # parse and handle the error
     ret = types.SimpleNamespace()
     ret.error_no = 0 # being optimistic, assuming no error
-    ret.error_msg = ""
+    ret.error_msg = "There is no syntax error. "
     ret.offset = 1 # dummy offset
     
     try:
@@ -176,10 +185,23 @@ def single_line_parsing_check(stmt, verbose=True):
             # correct
             pass
         else:
-            # incomplete statement, but parse correctly so far
-            ret.error_no = 1
-            ret.error_msg = e.original_msg
-            ret.offset = 1 # dummy offset
+            # Incomplete statement, but parse correctly so far.
+            # Need to first check if this statement is really correct or not
+            partial_correct, e2 = partial_statement_check(stmt, verbose)
+            if partial_correct:
+                # correct partial statement
+                ret.error_no = 1
+                ret.error_msg = ("There is no syntax error, " +
+                                 "but this line is a partial statement. ")
+                ret.orig_error_msg = e.original_msg
+                ret.offset = 1 # dummy offset
+            else:
+                # incorrect partial statement
+                ret.error_no = 2
+                ret.error_msg = str(e2.msg) + f", from column {e2.offset}." 
+                # Get the offset number. Need to adjust for removed spaces
+                ret.offset = e2.offset + leading_space_count 
+                ret.orig_exception = e2
     except JVoxRealSyntaxError as e:
         # real parsing error
         ret.error_no = 2
@@ -187,7 +209,7 @@ def single_line_parsing_check(stmt, verbose=True):
         try:
             ast.parse(stmt, filename="JVoxDummyFile")
         except Exception as e2: # should be a SyntaxError type exception 
-            ret.error_msg = str(e2.msg) + ", from column " + str(e2.offset)
+            ret.error_msg = str(e2.msg) + f", from column {e2.offset}." 
             # Get the offset number. Need to adjust for removed spaces
             ret.offset = e2.offset + leading_space_count 
             ret.orig_exception = e2
@@ -197,10 +219,52 @@ def single_line_parsing_check(stmt, verbose=True):
         ret.error_msg = e.message
         ret.offset = 1 # dummy offset
 
+    # Append indentation information at the end, if statement is correct
+    if ret.error_no <= 1 and  leading_space_count > 0:
+        ret.error_msg += f"Note, has {leading_space_count} leading spaces. "
+
     # correct the reading of punctuation marks in the error message
     ret.error_msg = debug_utils.make_punc_readable(ret.error_msg)
 
     # done, return
     return ret
         
-        
+
+def partial_statement_check(stmt, verbose):
+    '''
+    Check partial/incomplete statement. Some can be correct, some can be wrong.
+
+    Note that some statement can be correct even it is just partially
+    completely, e.g. "elif a>b:" is a perfectly OK one line statement
+
+    However, some partial statement can still be wrong. e.g., "[1,2,",
+    is a wrong partial statement, it should be closed with ']'.
+
+    Return:
+    1. True/False: correct or wrong,
+    2. SyntaxError or None: if wrong, also return the syntax error
+
+    '''
+
+    # use Python AST to get its SyntaxError
+    exception = None
+    try:
+        ast.parse(stmt)
+    except SyntaxError as e:
+        exception = e
+
+    # no error, strange
+    if exception is None:
+        print("Strange, partial line check returns no error for statement:",
+              stmt)
+        return True, None
+
+    # has error, check if statement is really wrong
+    if exception.msg.startswith("\'[\' was never closed"):
+        # this is a real error
+        return False,exception
+
+    # there could be other errors, need more testing
+
+    return True, None
+

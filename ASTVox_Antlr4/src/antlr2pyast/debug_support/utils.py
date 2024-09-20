@@ -15,6 +15,18 @@ def make_punc_readable(msg):
 
     # make ':' to 'colon'
     msg = msg.replace("\':\'", "\'colon\'")
+
+    # read '['
+    msg = msg.replace("\'[\'", "\'left brace\'")
+
+    # read ']'
+    msg = msg.replace("\']\'", "\'right brace\'")
+
+    # read '{'
+    msg = msg.replace("\'{\'", "\'left curely brace\'")
+
+    # read '}'
+    msg = msg.replace("\'}\'", "\'right curly brace\'")
     
     return msg
 
