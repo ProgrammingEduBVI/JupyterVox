@@ -39,7 +39,7 @@ if (args.type is None):
 # check if stmt is correct
 if args.type == "oneLineSyntax":
     #args.stmt = "print(\'x)\n"
-    ret = one_chk.single_line_parsing_check(args.stmt, args.verbose)
+    ret = one_chk.single_line_syntax_check(args.stmt, args.verbose)
     print(ret)
 elif args.type == "snippetSyntax":
     #args.stmt = "print(x)\nprint(y)"

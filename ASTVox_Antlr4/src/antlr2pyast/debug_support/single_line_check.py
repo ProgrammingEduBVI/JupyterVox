@@ -118,8 +118,192 @@ def add_prefix_for_dangling_elif(stmt):
     stmt = dummy_if + stmt
 
     return stmt
+
+
+def preprocess_stmt(stmt, verbose=True):
+    '''
+    Preprocess the single line statement for syntax check.
+
+    Proprocessing steps:
+    - remove leading space
+    - For "elif", "else", "except", add dummpy prefix
+    - return the number of leading spaces
+
+    Return a SimpleNamespace object:
+    1. leading_space_count: number of leading spaces
+    2. stmt : preprocessed statement
+    '''
+    # return value
+    ret_val = types.SimpleNamespace()
+    ret_val.leading_space_count = 0
     
-def single_line_parsing_check(stmt, verbose=True):
+    # Count how many leading spaces are there, we will remove them when checking
+    # syntax. but after checking, we need to adjust the offset for these removed
+    # spaces
+    while (stmt[ret_val.leading_space_count] == ' '):
+        ret_val.leading_space_count += 1
+
+    # remove leading spaces so that parsers won't report indentation error
+    ret_val.stmt =  stmt.lstrip()
+
+    # Add dummy prefix if the input is a line of "elif" or "else" or "except"
+    # stmt. Need to do this because elif cannot be parsed by itself
+    if ret_val.stmt.startswith("else") or ret_val.stmt.startswith("elif"):
+        # this is the dummy "if" part to be added
+        dummy_if = "if 5>4: return;\n"
+        # add it before "elif" stmt
+        ret_val.stmt = dummy_if + ret_val.stmt
+    elif ret_val.stmt.startswith("except"):
+        # this is the dummy "try" part to be added
+        dummy_try = "try: jvoxa=1;\n"
+        # add it before "elif" stmt
+        ret_val.stmt = dummy_try + ret_val.stmt
+        
+    return ret_val
+
+def is_correct_partial_statement(stmt, syntax_error, verbose=True):
+    '''
+    Check if a statement is a partial but correct statement. E.g., "if a>b:".
+
+    Note that some statement can be correct even it is just partially
+    completely, e.g. "elif a>b:" is a perfectly OK one line statement
+
+    However, some partial statement can still be wrong. e.g., "[1,2,",
+    is a wrong partial statement, it should be closed with ']'.
+
+    Input parameters:
+    1. stmt: the statement to check
+    2. syntax_error, the SyntaxError exception from Python AST parser
+    
+
+    Return:
+    1. True: is correct (and partial) statement
+    2. False: not correct statement
+    
+    '''
+
+    # add a new line character so that ANTLR4 will not panic
+    if not stmt.endswith('\n'):
+        stmt += '\n'
+
+    # create the ANTLR4 parser class
+    input_stream = antlr4.InputStream(stmt)
+    lexer = Python3Lexer(input_stream)
+    stream = antlr4.CommonTokenStream(lexer)
+    parser = Python3Parser(stream)
+
+    # supress the console error reporting, necessary?
+    # for l in parser._listeners: 
+    #     if isinstance(l, antlr4.error.ErrorListener.ConsoleErrorListener):
+    #         parser._listeners.remove(l)
+    #         break
+
+    # add JVox error listener
+    parser.addErrorListener(JVox_Single_Line_Error_Listener(verbose))
+
+    try:
+        tree = parser.single_input()
+    except JVoxIncompleteSyntaxError as e:
+        # Incomplete statement, but parse correctly so far. But we Need to first
+        # check if this statement is really correct or not using the
+        # syntax_error input.
+        if syntax_error.msg.startswith("\'[\' was never closed"):
+            # this is a real error
+            return False
+
+        # there could be other incorrect, partially parse-able statement
+        # need more testing
+
+        # this is indeed a correct partial statement
+        return True
+        
+    except JVoxRealSyntaxError as e:
+        # ANTLR4 also can't parse it, read syntax error
+        return False
+
+    # well, we really should not reach here
+    print("partial statement check returns correct non-partial statement, " +
+          "strange!")
+    
+    return True
+
+def single_line_syntax_check(stmt, verbose=True):
+    '''
+    Check if a single line of Python statement parsing is correct or not.
+
+    Note that some statement can be correct even it is just partially
+    completely, e.g. "elif a>b:" is a perfectly OK one line statement
+
+    However, some partial statement can still be wrong. e.g., "[1,2,",
+    is a wrong partial statement, it should be closed with ']'.
+
+    Input:
+        1. stmt: the one line statement
+        2. verbose: enable verbose output
+    Returns a SimpleNamespace object:
+        1. error_msg
+        2. error_no: 0 - correct, no error; 1 - partial correct;
+                     2 - syntax error; 
+        3. orig_exception: For real syntax error, this is the SyntaxError
+                           exception from Python AST parsing
+
+    '''
+
+    # preprocess the input statement
+    prep = preprocess_stmt(stmt, verbose)
+
+    # prepare return value
+    ret_val = types.SimpleNamespace()
+    ret_val.no = 0
+    ret_val.error_no = 0 # being optimistic, assuming no error
+    ret_val.error_msg = "There is no syntax error. "
+    ret_val.offset = 1 # dummy offset
+
+    # check if statement is empty
+    if prep.stmt == "" or prep.stmt == "\n":
+        ret_val.error_msg = "Empty line. "
+        return ret_val
+
+    # Let Python AST parse the statement, and catch the SyntaxError
+    syntax_error = None
+    try:
+        ast.parse(prep.stmt)
+    except SyntaxError as e:
+        syntax_error = e
+
+    # if no syntax_error
+    indentation_note = (f"Note that, it has {prep.leading_space_count} " +
+                        "leading spaces. ")
+    if syntax_error is None:
+        # add leading space count to the error message
+        if prep.leading_space_count > 0:
+            ret_val.error_msg += indentation_note
+        return ret_val
+
+    # if there is syntax error, use ANTRL to check if it is partial statement
+    if is_correct_partial_statement(prep.stmt, syntax_error, verbose):
+        # correct partial statement
+        ret_val.error_no = 1
+        ret_val.error_msg = ("There is no syntax error, " +
+                             "but this line is a partial statement. ")
+        ret_val.offset = 1 # dummy offset
+        # add leading space count to the error message
+        if prep.leading_space_count > 0:
+            ret_val.error_msg += indentation_note
+    else:
+        # indeed has syntax error
+        ret_val.error_no = 2
+        # Get the offset number. Need to adjust for removed spaces
+        ret_val.offset = syntax_error.offset + prep.leading_space_count 
+        ret_val.error_msg = (str(syntax_error.msg) +
+                             f", from column {ret_val.offset}. " )      
+        ret_val.orig_exception = syntax_error
+        
+    return ret_val
+    
+    
+######################## old code should remove someday ###################
+def single_line_parsing_check_old(stmt, verbose=True):
     '''
     Check if a single line of Python statement parsing is correct or not.
 
@@ -199,7 +383,7 @@ def single_line_parsing_check(stmt, verbose=True):
             else:
                 # incorrect partial statement
                 ret.error_no = 2
-                ret.error_msg = str(e2.msg) + f", from column {e2.offset}." 
+                ret.error_msg = str(e2.msg) + f", from column {e2.offset}. " 
                 # Get the offset number. Need to adjust for removed spaces
                 ret.offset = e2.offset + leading_space_count 
                 ret.orig_exception = e2

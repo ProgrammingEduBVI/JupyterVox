@@ -97,7 +97,7 @@ class jvox_interface:
         # add a new line to the statement to suppress the "i want newline or ;"
         # parsing error for ANTLR4
         stmt += '\n'
-        check_result = one_chk.single_line_parsing_check(stmt, verbose)
+        check_result = one_chk.single_line_syntax_check(stmt, verbose)
 
         # generate the speech to be returned to the user
         ret_val = types.SimpleNamespace()
