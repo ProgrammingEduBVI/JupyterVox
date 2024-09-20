@@ -29,12 +29,24 @@ function jvox_make_puncs_readable(msg){
     // make ':' readable
     msg = msg.replace("\':\'", "\'colon\'");
 
+    // make '[' readable
+    msg = msg.replace("\'[\'", "\'left brace\'");
+
+    // make ']' readable
+    msg = msg.replace("\']\'", "\'right brace\'");
+
+     // make '{' readable
+    msg = msg.replace("\'{\'", "\'left curly brace\'");
+
+    // make '}' readable
+    msg = msg.replace("\'}\'", "\'right curly brace\'");
+
     return msg;
 }
 
 // create a common Audio object to read error messages
 let a = new Audio();
-let reading_rate = 1.5;
+let reading_rate = 1.3;
 
 // Use Google Text-to-Speech (TTS) to talk
 function jvox_gtts_speak(text, lang){
@@ -42,6 +54,7 @@ function jvox_gtts_speak(text, lang){
     // add the sound to the audio element
     a.src = url;
     //For auto playing the sound
+    a.load(); // this is to avoid losing the sound of first few seconds
     a.playbackRate = reading_rate;
     a.play();
 }
@@ -140,13 +153,23 @@ function jvox_jump_to_error_line(marker, uri){
     }
 
     return null;
-
 }
 
 // jump the error line for uri's (cell's) error marker
 function jvox_jump_to_error_column(marker, uri){
     console.log("JVox: jumping to last error site (line and column)")
     let editors = unsafeWindow.monaco.editor.getEditors()
+
+    // check if last error type, only does this for SyntaxError and IndentationError
+    if (!(marker.message.startsWith("SyntaxError:") || marker.message.startsWith("IndentationError"))){
+        console.log("JVox: no column to jump to, because last error is not syntax error.");
+        // report wont jump to column user
+        // jvox_gtts_speak("Can not jump to error column, because last error is not syntax error. Jump to line instead.","en-US");
+
+        // jump to line
+        jvox_jump_to_error_line(marker, uri)
+        return
+    }
 
     // find the cell that causing the error
     let i = 0;
@@ -168,11 +191,29 @@ function jvox_jump_to_error_column(marker, uri){
         return;
     }
 
-    // get cell text
-    let stmts = error_cell.getValue();
+    // if this is an indentation error, we can just jump to the beginning of the line
+    if (marker.message.startsWith("IndentationError")){
+        // jump to the line and column
+        error_cell.setPosition({lineNumber: marker.startLineNumber,
+                                column: 1});
+        error_cell.focus();
 
-    // send the cell code to server to check, so that we can get both line and col number
-    let surl = server_url + "/snippetsyntaxcheck";
+        // sound report to user
+        let msg = ("jumped to indentation error line " + marker.startLineNumber.toString() +
+                   ", column one")
+        jvox_gtts_speak(msg, "en-US");
+
+        return
+    }
+
+    // get cell text
+    let cell_txt = error_cell.getValue();
+    // get the line text that causing the error
+    let line_no = marker.startLineNumber
+    let cell_txtArr = cell_txt.split('\n');
+    var stmt_text = cell_txtArr[line_no-1];
+
+    let surl = server_url + "/singlelinecheck";
 
     // send request to server to obtain speech mp3 file/blob as response
     GM_xmlhttpRequest({
@@ -182,32 +223,22 @@ function jvox_jump_to_error_column(marker, uri){
             "Content-Type": "application/json"
         },
         responseType: "json",
-        data: JSON.stringify({"stmts":stmts}),
+        data: JSON.stringify({"stmt":stmt_text}),
         onload: function(response) {
             console.log(response.responseType);
             console.log(response.response);
             console.log(response.response.message);
-            console.log(response.response.error_no);
+            console.log(response.response.offset);
 
             // jump to the line and column
-            error_cell.setPosition({lineNumber: response.response.line_no,
+            error_cell.setPosition({lineNumber: line_no,
                                     column: response.response.offset});
             error_cell.focus();
 
             // sound report to user
-            if (response.response.error_no != 0){
-                // does have error
-                let msg = ("jumped to error line " + response.response.line_no.toString() +
+            let msg = ("jumped to error line " + marker.startLineNumber.toString() +
                        ", column " + response.response.offset.toString())
-                jvox_gtts_speak(msg, "en-US");
-            }
-            else{
-                // no error in current snippet
-                let msg = ("NO syntax error, but jumped to line " + response.response.line_no.toString() +
-                       ", column " + response.response.offset.toString())
-                jvox_gtts_speak(msg, "en-US");
-            }
-
+            jvox_gtts_speak(msg, "en-US");
         },
         onerror: function (response) {
             console.error("JVox syntax check HTTP error:" + response.statusText);
@@ -363,4 +394,79 @@ function jvox_onDidChangeMarkers_old(uri){
            break
        }
     }
+}
+
+// jump the error line for uri's (cell's) error marker
+function jvox_jump_to_error_column_old(marker, uri){
+    console.log("JVox: jumping to last error site (line and column)")
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    // find the cell that causing the error
+    let i = 0;
+    let len = editors.length
+    let error_cell = editors[0]
+    for(i = 0; i < len ; i++){
+       let cell = editors[i];
+       if (cell.getModel().uri == uri){
+           console.log("JVox: found last error cell: ", cell)
+           error_cell = cell
+           break;
+       }
+    }
+
+    if (i == len){
+        // failed to find the cell, quit
+        console.log("JVox: when jumping to error line/col, failed to find the error cell");
+
+        return;
+    }
+
+    // get cell text
+    let stmts = error_cell.getValue();
+
+    // send the cell code to server to check, so that we can get both line and col number
+    let surl = server_url + "/snippetsyntaxcheck";
+
+    // send request to server to obtain speech mp3 file/blob as response
+    GM_xmlhttpRequest({
+        method: "POST",
+        url: surl,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        responseType: "json",
+        data: JSON.stringify({"stmts":stmts}),
+        onload: function(response) {
+            console.log(response.responseType);
+            console.log(response.response);
+            console.log(response.response.message);
+            console.log(response.response.error_no);
+
+            // jump to the line and column
+            error_cell.setPosition({lineNumber: response.response.line_no,
+                                    column: response.response.offset});
+            error_cell.focus();
+
+            // sound report to user
+            if (response.response.error_no != 0){
+                // does have error
+                let msg = ("jumped to error line " + response.response.line_no.toString() +
+                       ", column " + response.response.offset.toString())
+                jvox_gtts_speak(msg, "en-US");
+            }
+            else{
+                // no error in current snippet
+                let msg = ("NO syntax error, but jumped to line " + response.response.line_no.toString() +
+                       ", column " + response.response.offset.toString())
+                jvox_gtts_speak(msg, "en-US");
+            }
+
+        },
+        onerror: function (response) {
+            console.error("JVox syntax check HTTP error:" + response.statusText);
+        }
+    });
+
+    return null;
+
 }
