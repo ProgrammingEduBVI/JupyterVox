@@ -299,7 +299,7 @@ def single_line_syntax_check(stmt, verbose=True):
                              f", from column {ret_val.offset}. " )      
         ret_val.orig_exception = syntax_error
         # correct the reading of punctuation marks in the error message
-        ret_val.error_msg = debug_utils.make_punc_readable(ret.error_msg)
+        ret_val.error_msg = debug_utils.make_punc_readable(ret_val.error_msg)
         
     return ret_val
     
