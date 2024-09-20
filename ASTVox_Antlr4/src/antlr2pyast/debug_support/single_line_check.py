@@ -95,14 +95,14 @@ class JVox_Single_Line_Error_Listener(ErrorListener.ErrorListener):
         if self.verbose:
             print("Single line checker: ANTLR4 attempting full context error")
         
-        raise JVoxOtherParsingError("reportAttemptingFullContext")
+        #raise JVoxOtherParsingError("reportAttemptingFullContext")
 
     def reportContextSensitivity(self, recognizer, dfa, startIndex, stopIndex,
                                  prediction, configs):
         if self.verbose:
             print("Single line checker: ANTLR4 context sensitivity error")
             
-        raise JVoxOtherParsingError("reportContextSensitivity")
+        #raise JVoxOtherParsingError("reportContextSensitivity")
 
 
 def add_prefix_for_dangling_elif(stmt):
@@ -140,7 +140,8 @@ def single_line_parsing_check(stmt, verbose=True):
                            exception from Python AST parsing
 
     '''
-
+    stmt += '\n'
+    
     # Count how many leading spaces are there, we will remove them when checking
     # syntax. but after checking, we need to adjust the offset for these removed
     # spaces
@@ -221,7 +222,8 @@ def single_line_parsing_check(stmt, verbose=True):
 
     # Append indentation information at the end, if statement is correct
     if ret.error_no <= 1 and  leading_space_count > 0:
-        ret.error_msg += f"Note, has {leading_space_count} leading spaces. "
+        ret.error_msg += (f"Note that, it has {leading_space_count} "+
+                          "leading spaces. ")
 
     # correct the reading of punctuation marks in the error message
     ret.error_msg = debug_utils.make_punc_readable(ret.error_msg)
