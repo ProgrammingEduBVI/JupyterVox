@@ -102,7 +102,7 @@ class jvox_interface:
         # generate the speech to be returned to the user
         ret_val = types.SimpleNamespace()
         if check_result.error_no == 0:
-            ret_val.msg = check_result.error_msg.
+            ret_val.msg = check_result.error_msg
             ret_val.offset = 1
         elif check_result.error_no == 1:
             ret_val.msg = check_result.error_msg
