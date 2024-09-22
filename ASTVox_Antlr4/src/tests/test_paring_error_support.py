@@ -15,6 +15,7 @@ import ast
 # JVox debugging support packages
 from debug_support import single_line_check as one_chk
 from debug_support import code_snippet_check as snippet_chk
+from debug_support import runtime_error_support as rt_error
 
 ####### print and compare each test case
 # get test case file name
