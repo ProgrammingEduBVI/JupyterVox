@@ -1,5 +1,5 @@
 '''
-Code for runtime error related debugging supports.
+JVox's debugging support for NameError.
 '''
 
 # system packages
@@ -17,7 +17,7 @@ from converter import tools
 import ast
 
 # import sibling packages
-from . import utils as debug_utils
+from .. import utils as debug_utils
 
 def get_name_error_column(error_msg, code, line_no, verbose=True):
     '''
@@ -35,7 +35,7 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
     4. verbose: enable verbose output or not
 
     Return:
-    1. col: column number, or -1, if cannot find it
+    1. col_no: column number, or -1, if cannot find it
     '''
 
     # extract the name of the variable from error message
@@ -74,13 +74,17 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
         print(f"The name error is {error_msg}")
         return -1
     elif len(nodes) > 1:
-        print(f"Found more than one variable {var_name} in code at line {line_no}:")
+        print(f"Found more than one variable {var_name} in code at line",
+              f"{line_no}:")
         print(code)
         print(f"The name error is {error_msg}")
         return -1
     
-    # found one variable that matches
-    return nodes[0].col_offset
+    # Found one variable that matches, return the column number.  Note that,
+    # need to add 1 since Python AST's column offset starts at 0, not 1
+    ret_val = types.SimpleNamespace()
+    ret_val.col_no = nodes[0].col_offset + 1
+    return ret_val
     
     # # tokenize the string
     # input_stream = antlr4.InputStream(stmt)
@@ -108,7 +112,7 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
     #         print(f"Find name: {error_name}, at column {offset}, " +
     #               f"in statement: {stmt}, for error message: {error_msg}.")
     
-    return offset
+    # return offset
         
 def find_name_in_line(node, var_name, line_no, verbose=True):
     '''
@@ -146,6 +150,35 @@ def find_name_in_line(node, var_name, line_no, verbose=True):
                                               verbose)
 
     return found
+
+def handle_name_error(error_msg, code, line_no, support_type, extra_data,
+                      verbose=True):
+    '''
+    Dispatcher for name error handling. Invokes the corresponding error handler
+    based on the "support_type" requested.
+
+    Input:
+    - error_msg: full error message
+    - code: full code in cell
+    - line_no: error line number
+    - support_type: string that specifies the support requested
+      possible value:
+         - col_no: column of the variable causing name error
+    - extra_data: other data (for future extension)
+    - verbose: verbose output or not
+
+    Return:
+    - dictionary with fields for corresponding error's return values
+    '''
+
+    if support_type == "col_no":
+        return get_name_error_column(error_msg, code, line_no, verbose)
+    else:
+        print("NameError handling: unsupported request type:", support_type)
+        return None
+
+    # should not reach here
+    return None
 
 
 def str_node(node):

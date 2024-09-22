@@ -29,6 +29,7 @@ from token_navigation import lexeme_navigation as lex_nav
 # import single line parsing checking packages
 from debug_support import single_line_check as one_chk
 from debug_support import code_snippet_check as snippet_chk
+from debug_support.runtime_error_support import entry_point as rt_support
 
 class jvox_interface:
     vox_gen = None;
@@ -131,4 +132,11 @@ class jvox_interface:
 
         return ret_val
 
-        
+    # debugging support for runtime errors
+    def handle_runtime_error(self, error_msg, code, line_no, support_type,
+                             extra_data, verbose):
+        # pass data on to runtime error handler
+        return rt_support.handle_runtime_error(error_msg, code, line_no,
+                                               support_type, extra_data,
+                                               verbose)
+

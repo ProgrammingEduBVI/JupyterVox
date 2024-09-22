@@ -1,0 +1,12 @@
+#Code                                                   #inline code comments (instructors only)
+
+number = int(input("Please type in a number: "))           #Incorrect (Check revised code)
+if number > 100:                                          #Correct
+  print("Number is greater than one hundred")             #Correct
+elif number >.36:                                         #Incorrect (Check revised code)
+  prin ("The number entered was greater than thirty six")  #Incorrect (Check revised code)
+elif number == 30:                                         #Incorrect (Check revised code)
+         print("The number is equally to thirty")          #Incorrect (Check revised code)
+else:                                                     #Correct
+               print("You entered: " , number)           #Incorrect (Check revised code)
+print("Thank you for participating")                      #Correct (although code outside the if statement)

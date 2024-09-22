@@ -9,12 +9,13 @@
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @connect      3.144.13.232
+// @connect      localhost
 // ==/UserScript==
 
 console.log("JVox Debgging plugin start.");
 
-var server_url = "http://3.144.13.232/jvox";
-//var server_url = "http://localhost:5000/";
+//var server_url = "http://3.144.13.232/jvox";
+var server_url = "http://localhost:5000/";
 
 // function to replace punctuation marks with its actual text name
 // so that text-to-speech will not ignore them
@@ -153,43 +154,42 @@ function jvox_jump_to_error_line(marker, uri){
     }
 
     return null;
+
 }
 
-// jump the error line for uri's (cell's) error marker
-function jvox_jump_to_error_column(marker, uri){
-    console.log("JVox: jumping to last error site (line and column)")
+// find the cell that causing the last error
+function jvox_find_error_cell(marker, uri){
     let editors = unsafeWindow.monaco.editor.getEditors()
-
-    // check if last error type, only does this for SyntaxError and IndentationError
-    if (!(marker.message.startsWith("SyntaxError:") || marker.message.startsWith("IndentationError"))){
-        console.log("JVox: no column to jump to, because last error is not syntax error.");
-        // report wont jump to column user
-        // jvox_gtts_speak("Can not jump to error column, because last error is not syntax error. Jump to line instead.","en-US");
-
-        // jump to line
-        jvox_jump_to_error_line(marker, uri)
-        return
-    }
 
     // find the cell that causing the error
     let i = 0;
-    let len = editors.length
-    let error_cell = editors[0]
+    let len = editors.length;
+    let error_cell = editors[0];
     for(i = 0; i < len ; i++){
        let cell = editors[i];
        if (cell.getModel().uri == uri){
-           console.log("JVox: found last error cell: ", cell)
-           error_cell = cell
+           console.log("JVox: found last error cell: ", cell);
+           error_cell = cell;
            break;
        }
     }
 
     if (i == len){
         // failed to find the cell, quit
-        console.log("JVox: when jumping to error line/col, failed to find the error cell");
-
+        console.log("JVox: failed to find the error cell");
         return;
     }
+
+    return error_cell;
+}
+
+// jump the error line for uri's (cell's) error marker
+function jvox_jump_to_error_column_syntax_error(marker, uri){
+    console.log("JVox: jumping to last error site (line and column)")
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    // find the cell that causing the error
+    let error_cell = jvox_find_error_cell(marker, uri)
 
     // if this is an indentation error, we can just jump to the beginning of the line
     if (marker.message.startsWith("IndentationError")){
@@ -246,6 +246,26 @@ function jvox_jump_to_error_column(marker, uri){
     });
 
     return null;
+
+}
+
+// jump the error line for uri's (cell's) error marker
+function jvox_jump_to_error_column(marker, uri){
+    // dispatch to the correct jump-to function based on error type
+    if ((marker.message.startsWith("SyntaxError:") || marker.message.startsWith("IndentationError"))){
+        jvox_jump_to_error_column_syntax_error(marker, uri)
+        return
+    }
+    else if (marker.message.startsWith("NameError:")){
+        jvox_jump_to_error_column_name_error(marker, uri)
+        return
+    }
+    else{
+        // jump to line
+        console.log("JVox: no column to jump to, because last error type is not supported, last error message:", marker.message);
+        jvox_jump_to_error_line(marker, uri)
+        return
+    }
 
 }
 
@@ -362,72 +382,32 @@ function doc_keyUp(e) {
         console.log("JVox: jump to the line and column of last error.")
         jvox_jump_to_error_column(last_error_marker, last_error_uri);
     }
+    else if (e.altKey && e.ctrlKey && e.code === 'KeyT') {
+        // read last error marker's message
+        console.log("JVox: jump to the line and column of last error.");
+        jvox_jump_to_error_column_name_error(last_error_marker, last_error_uri);
+    }
 }
 
 // register the handler
 document.addEventListener('keyup', doc_keyUp, false);
 
+////////////////////////////////////////////////////////////////////
+// Debugging support for run-time errors
+////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////
-/// old code
-///////////////////////////////////////////////
-function jvox_onDidChangeMarkers_old(uri){
-    console.log("got marker change event")
-    console.log(uri)
-    const markers = unsafeWindow.monaco.editor.getModelMarkers({resource: uri})
-    console.log('markers:', markers.map(
-    ({ message, startLineNumber, startColumn, endLineNumber, endColumn }) =>
-      `${message} [${startLineNumber}:${startColumn}-${endLineNumber}:${endColumn}]`,
-    ))
-    console.log(markers)
-    // try to find the editor with uri
-    var editors = unsafeWindow.monaco.editor.getEditors()
-    var i = 0;
-    var len = editors.length
-    for(i = 0; i < len ; i++){
-       var e = editors[i];
-       if (e.getModel().uri == uri){
-           console.log("found editor")
-           console.log(e)
-           e.setPosition({lineNumber: 1, column: 2});
-           e.focus();
-           break
-       }
-    }
-}
+// invoke runtime error support at the server
+function call_runtime_support_service(error_msg, code, line_no, support_type, extra_data,
+                                      response_func){
+    let surl = server_url + "/runtimeerrorsupport";
 
-// jump the error line for uri's (cell's) error marker
-function jvox_jump_to_error_column_old(marker, uri){
-    console.log("JVox: jumping to last error site (line and column)")
-    let editors = unsafeWindow.monaco.editor.getEditors()
-
-    // find the cell that causing the error
-    let i = 0;
-    let len = editors.length
-    let error_cell = editors[0]
-    for(i = 0; i < len ; i++){
-       let cell = editors[i];
-       if (cell.getModel().uri == uri){
-           console.log("JVox: found last error cell: ", cell)
-           error_cell = cell
-           break;
-       }
+    // construct json post data
+    let post_data = {"error_msg":error_msg, "code":code, "line_no":line_no, "support_type":support_type}
+    // combine with the extra data, which should also be a dictionary-like object
+    if (!(extra_data == null)){
+        post_data = Object.assign(post_data, extra_data)
     }
 
-    if (i == len){
-        // failed to find the cell, quit
-        console.log("JVox: when jumping to error line/col, failed to find the error cell");
-
-        return;
-    }
-
-    // get cell text
-    let stmts = error_cell.getValue();
-
-    // send the cell code to server to check, so that we can get both line and col number
-    let surl = server_url + "/snippetsyntaxcheck";
-
-    // send request to server to obtain speech mp3 file/blob as response
     GM_xmlhttpRequest({
         method: "POST",
         url: surl,
@@ -435,38 +415,50 @@ function jvox_jump_to_error_column_old(marker, uri){
             "Content-Type": "application/json"
         },
         responseType: "json",
-        data: JSON.stringify({"stmts":stmts}),
-        onload: function(response) {
-            console.log(response.responseType);
-            console.log(response.response);
-            console.log(response.response.message);
-            console.log(response.response.error_no);
-
-            // jump to the line and column
-            error_cell.setPosition({lineNumber: response.response.line_no,
-                                    column: response.response.offset});
-            error_cell.focus();
-
-            // sound report to user
-            if (response.response.error_no != 0){
-                // does have error
-                let msg = ("jumped to error line " + response.response.line_no.toString() +
-                       ", column " + response.response.offset.toString())
-                jvox_gtts_speak(msg, "en-US");
-            }
-            else{
-                // no error in current snippet
-                let msg = ("NO syntax error, but jumped to line " + response.response.line_no.toString() +
-                       ", column " + response.response.offset.toString())
-                jvox_gtts_speak(msg, "en-US");
-            }
-
-        },
+        data: JSON.stringify(post_data),
+        onload: response_func,
         onerror: function (response) {
             console.error("JVox syntax check HTTP error:" + response.statusText);
         }
     });
 
-    return null;
+    return;
+}
+
+// jump the error line and column for a name error
+function jvox_jump_to_error_column_name_error(marker, uri){
+    console.log("JVox: jumping to last error site for name error (line and column)");
+
+    let support_type = "col_no";
+
+    // find the error cell
+    let error_cell = jvox_find_error_cell(marker, uri);
+
+    // the response handling function
+    let response_func = function(response) {
+            console.log(response.responseType);
+            console.log(response.response);
+            console.log(response.response.col_no);
+
+            // jump to the line and column
+            error_cell.setPosition({lineNumber: marker.startLineNumber,
+                              column: response.response.col_no});
+            error_cell.focus();
+
+            // sound report to user
+            let msg = ("jumped to error line " + marker.startLineNumber.toString() +
+                       ", column " + response.response.col_no.toString())
+            jvox_gtts_speak(msg, "en-US");
+    }
+
+
+    // extra data for testing
+    let extra_data = {"extra_data":"test123x"};
+
+    // call runtime error support
+    call_runtime_support_service(marker.message, error_cell.getValue(), marker.startLineNumber,
+                                 support_type, extra_data, response_func)
+
+    return;
 
 }

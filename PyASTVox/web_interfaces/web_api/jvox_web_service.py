@@ -102,6 +102,34 @@ def snippet_syntax_check():
 
     return jsonify(dat)
 
+@app.route('/runtimeerrorsupport',methods=['POST'])
+def runtime_error_support():
+    # Retrieve the error message, code, line number, and support type.
+    # Retrieve here, so that missing fields will cause exception in this step
+    error_msg = request.json['error_msg']
+    code = request.json['code']
+    line_no = request.json['line_no']
+    support_type = request.json['support_type']
+
+    # load the request data
+    print("JVox runtime error support requested with data:")
+    for key in request.json.keys():
+        if key != "code":
+            v = request.json[key]
+            print(f"{key}: {v}")
+    # print code at last
+    print(f"Code:\n{code}")
+    # print(request.json)
+
+    # Pass on the data. Note that, the request's whole json data are passed on,
+    # in case additional data are required for runtime error support.
+    ret_val = jvox.handle_runtime_error(error_msg, code, line_no, support_type,
+                                        request.get_json(), True)
+    # convert the returned SimpleNamespace to dictionary
+    dat = vars(ret_val)
+
+    return jsonify(dat)
+
 if __name__ == "__main__":
     jvox = jvox_interface.jvox_interface("default")
     print("hello jvox:", jvox)

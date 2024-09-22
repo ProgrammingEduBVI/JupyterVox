@@ -15,7 +15,7 @@ import ast
 # JVox debugging support packages
 from debug_support import single_line_check as one_chk
 from debug_support import code_snippet_check as snippet_chk
-from debug_support import runtime_error_support as rt_error
+from debug_support.runtime_error_support import entry_point as rt_error
 
 ####### print and compare each test case
 # get test case file name
@@ -26,13 +26,15 @@ parser.add_argument('-l', '--line', help=("line number"), dest='line_no',
                     type=int)
 parser.add_argument('-e', '--error', help='runtime error message',
                     dest='error_msg')
+parser.add_argument('-t', '--type', help='support type requested',
+                    dest='type')
 parser.add_argument('-v', '--verbose', action='store_true',
                     dest='verbose', help='enable verbose output' )
 
 args = parser.parse_args()
 
 if (args.file is None):
-    print("Missing parameter: filename")
+    print("Missing parameter: code filename")
     parser.print_help()
 
 if (args.line_no is None):
@@ -40,15 +42,19 @@ if (args.line_no is None):
     parser.print_help()
 
 if (args.error_msg is None):
-    print("Missing parameter: line number")
+    print("Missing parameter: full error message")
+    parser.print_help()
+
+if (args.type is None):
+    print("Missing parameter: support type requested")
     parser.print_help()
 
 
 # open load the code into one string
 code = open(args.file, 'r').read()
 
-ret = rt_error.get_name_error_column(args.error_msg, code, args.line_no,
-                                     args.verbose)
+ret = rt_error.handle_runtime_error(args.error_msg, code, args.line_no,
+                                    args.type, None, args.verbose)
 
 print(ret)
 
