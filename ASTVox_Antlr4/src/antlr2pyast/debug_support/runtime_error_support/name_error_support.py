@@ -23,10 +23,6 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
     '''
     Find the column number of the error name.
 
-    I only used lexical analysis (tokenization) to search for the name, because
-    it does require significantly amount of work to parse than tokenize. The
-    problem is always leading spaces, partial statement etc.
-
     Input:
     1. error_msg: the "NameError:..." message
     2. code: the code of the errored cell, all of the code in the cell should be
@@ -46,12 +42,12 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
     if regex_ret is None:
         # did not find match
         print("Failed to find error obj name in message:", error_msg)
-        return -1
+        ret_val.col_no = 0
+        return ret_val
 
     if verbose:
         var_name = regex_ret.group(1)
         print("Find error obj name:", regex_ret.group(1))
-
 
     # parse the cell code
     try:
@@ -59,11 +55,12 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
     except Exception as e:
         # really should not get here, the syntax should be correct before
         # generating a runtime error
-        print("Parsing when handling name error with exception,", e)
-        return -1
+        print("Parsing error when handling name error with exception,", e)
+        ret_val.col_no = 0
+        return ret_val
 
     if verbose:
-        ast_visit(tree)
+        debug_utils.ast_visit(tree)
 
     # find the name in the code
     nodes = find_name_in_line(tree, var_name, line_no, verbose)
@@ -72,13 +69,15 @@ def get_name_error_column(error_msg, code, line_no, verbose=True):
         print(f"failed to find variable {var_name} in code at line {line_no}:")
         print(code)
         print(f"The name error is {error_msg}")
-        return -1
+        ret_val.col_no = 0
+        return ret_val
     elif len(nodes) > 1:
         print(f"Found more than one variable {var_name} in code at line",
               f"{line_no}:")
         print(code)
         print(f"The name error is {error_msg}")
-        return -1
+        ret_val.col_no = 0
+        return ret_val
     
     # Found one variable that matches, return the column number.  Note that,
     # need to add 1 since Python AST's column offset starts at 0, not 1
@@ -180,25 +179,3 @@ def handle_name_error(error_msg, code, line_no, support_type, extra_data,
     # should not reach here
     return None
 
-
-def str_node(node):
-    if isinstance(node, ast.AST):
-        fields = [(name, str_node(val)) for name, val in ast.iter_fields(node) if name not in ('left', 'right')]
-        rv = '%s(%s' % (node.__class__.__name__, ', '.join('%s=%s' % field for field in fields))
-        if hasattr(node, "col_offset"):
-          col_text = f"(line: {node.lineno}, col: {node.col_offset})"
-        else:
-          col_text = ""
-        return rv + ')' + col_text
-    else:
-        return repr(node)
-def ast_visit(node, level=0):
-    print('  ' * level + str_node(node))
-    for field, value in ast.iter_fields(node):
-        #print(field, "<xxxx>", value)
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, ast.AST):
-                    ast_visit(item, level=level+1)
-        elif isinstance(value, ast.AST):
-            ast_visit(value, level=level+1)

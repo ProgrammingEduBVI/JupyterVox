@@ -1,12 +1,32 @@
-#Code                                                   #inline code comments (instructors only)
+# Working with lists
 
-number = int(input("Please type in a number: "))           #Incorrect (Check revised code)
-if number > 100:                                          #Correct
-  print("Number is greater than one hundred")             #Correct
-elif number >.36:                                         #Incorrect (Check revised code)
-  prin ("The number entered was greater than thirty six")  #Incorrect (Check revised code)
-elif number == 30:                                         #Incorrect (Check revised code)
-         print("The number is equally to thirty")          #Incorrect (Check revised code)
-else:                                                     #Correct
-               print("You entered: " , number)           #Incorrect (Check revised code)
-print("Thank you for participating")                      #Correct (although code outside the if statement)
+# 1. Missing colon after 'for'
+numbers = [1, 2, 3, 4, 5]
+for num in numbers:  # Added a colon after 'for'
+    print(num)
+
+# 2. Incorrect method name 'apend'
+fruits = ['apple', 'orange', 'banana']
+fruits.apend('grape')  # Corrected method name to 'append'
+print(fruits)
+
+# 3. Indentation error
+colors = ['red', 'blue', 'green']
+print(colors)  # Removed extra indentation
+
+# 4. Missing closing bracket
+animals = ['lion', 'elephant', 'giraffe']  # Added a closing bracket
+print(animals)
+
+# 5. Incorrect list indexing style
+letters = ['a', 'b', 'c', 'd']
+print(letters[3])  # Removed quotes around the index
+
+# 6. Missing parenthesis
+mixed_data = ['apple', 3, 'orange', 5]
+print(len(mixed_data))  # Added a closing parenthesis
+
+# 7. Undefined variable name
+vegetables = ['carrot', 'broccoli', 'spinach']
+# Removed reference to undefined variable 'salads'
+print(vegetables)

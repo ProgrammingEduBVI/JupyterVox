@@ -3,6 +3,8 @@ Entry point functions for JVox's debugging support for run-time errors
 '''
 
 from . import name_error_support
+from . import attribute_error_support
+from . import type_error_support
 
 def handle_runtime_error(error_msg, code, line_no, support_type, extra_data,
                          verbose=True):
@@ -24,11 +26,31 @@ def handle_runtime_error(error_msg, code, line_no, support_type, extra_data,
 
     # dispatch the error to corresponding error handling packages
     if error_msg.startswith("NameError"):
-        ret_val = name_error_support.get_name_error_column(error_msg, code,
-                                                           line_no, verbose)
+        ret_val = name_error_support.handle_name_error(error_msg,
+                                                       code,
+                                                       line_no,
+                                                       support_type,
+                                                       extra_data,
+                                                       verbose)
+        return ret_val
+    elif error_msg.startswith("AttributeError"):
+        ret_val = attribute_error_support.handle_attribute_error(error_msg,
+                                                                 code,
+                                                                 line_no,
+                                                                 support_type,
+                                                                 extra_data,
+                                                                 verbose)
+        return ret_val
+    elif error_msg.startswith("TypeError"):
+        ret_val = type_error_support.handle_type_error(error_msg,
+                                                       code,
+                                                       line_no,
+                                                       support_type,
+                                                       extra_data,
+                                                       verbose)
         return ret_val
     else:
-        print("Runtime error handler: unsupported error type,"
+        print("Runtime error handler: unsupported error type, "
               "error message received:", error_msg)
         return None
 
