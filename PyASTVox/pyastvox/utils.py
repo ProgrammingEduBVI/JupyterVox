@@ -57,6 +57,12 @@ def make_token_readable(token_string):
     # underscore
     if token_string == "_":
         return "underscore"
+
+    # quote
+    if token_string == "\"":
+        return "quote"
+    elif token_string == "'":
+        return "single quote"
     
     # avoid reading a/A as an article
     if token_string == "a" or token_string == "A":
