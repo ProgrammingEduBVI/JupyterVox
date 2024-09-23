@@ -64,6 +64,18 @@ def make_token_readable(token_string):
     elif token_string == "'":
         return "single quote"
     
+    # parenthesis
+    if token_string == "(":
+        return "left paren"
+    elif token_string == ")":
+        return "right paren"
+
+    # for strings, add "string"
+    if token_string[0] == "\"":
+        return "string " + token_string
+    elif token_string[0] == "'":
+        return "string " + token_string
+    
     # avoid reading a/A as an article
     if token_string == "a" or token_string == "A":
         return token_string + "-"

@@ -110,7 +110,7 @@ class jvox_screenreader():
         
       # error parsing, tokenize the statement
       token_strings = antlr2pyast.tokenize_stmt(stmt) 
-      
+   
       return whitespace_speech + self.gen_speech_based_on_tokens(token_strings)
     
     # print the tree
