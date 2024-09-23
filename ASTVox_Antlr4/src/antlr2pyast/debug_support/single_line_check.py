@@ -208,7 +208,7 @@ def is_correct_partial_statement(stmt, syntax_error, verbose=True):
         # check if this statement is really correct or not using the
         # syntax_error input.
         #if syntax_error.msg.startswith("\'[\' was never closed"):
-        if syntax_error.msg.has("never closed"):
+        if "never closed" in syntax_error.msg:
             # this is a real error
             return False
 
