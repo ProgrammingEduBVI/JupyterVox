@@ -207,7 +207,8 @@ def is_correct_partial_statement(stmt, syntax_error, verbose=True):
         # Incomplete statement, but parse correctly so far. But we Need to first
         # check if this statement is really correct or not using the
         # syntax_error input.
-        if syntax_error.msg.startswith("\'[\' was never closed"):
+        #if syntax_error.msg.startswith("\'[\' was never closed"):
+        if syntax_error.msg.has("never closed"):
             # this is a real error
             return False
 
@@ -284,7 +285,7 @@ def single_line_syntax_check(stmt, verbose=True):
     if is_correct_partial_statement(prep.stmt, syntax_error, verbose):
         # correct partial statement
         ret_val.error_no = 1
-        ret_val.error_msg = ("There is no syntax error, " +
+        ret_val.error_msg = ("Parsed correctly so far, " +
                              "but this line is a partial statement. ")
         ret_val.offset = 1 # dummy offset
         # add leading space count to the error message

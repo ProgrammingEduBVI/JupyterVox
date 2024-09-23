@@ -19,16 +19,16 @@ def make_punc_readable(msg):
     msg = msg.replace("\':\'", "\'colon\'")
 
     # read '['
-    msg = msg.replace("\'[\'", "\'left brace\'")
+    msg = msg.replace("\'[\'", "\'left bracket\'")
 
     # read ']'
-    msg = msg.replace("\']\'", "\'right brace\'")
+    msg = msg.replace("\']\'", "\'right bracket\'")
 
     # read '{'
-    msg = msg.replace("\'{\'", "\'left curely brace\'")
+    msg = msg.replace("\'{\'", "\'left curly bracket\'")
 
     # read '}'
-    msg = msg.replace("\'}\'", "\'right curly brace\'")
+    msg = msg.replace("\'}\'", "\'right curly bracket\'")
     
     return msg
 
