@@ -85,7 +85,7 @@ class jvox_screenreader():
     # third, check if it is a standalone non-parse-able statement,
     # e.g., "try", "else", "except". They will be read without
     # parsing.
-    standalone_speech = self.gen_standalone_statemetns(stmt)
+    standalone_speech = self.gen_standalone_statements(stmt)
     if standalone_speech != "":
       return whitespace_speech + standalone_speech
         
@@ -108,8 +108,10 @@ class jvox_screenreader():
       if verbose:
         traceback.print_exc()
         
-      # error parsing, just return the statement itself
-      return whitespace_speech + stmt 
+      # error parsing, tokenize the statement
+      token_strings = antlr2pyast.tokenize_stmt(stmt) 
+      
+      return whitespace_speech + self.gen_speech_based_on_tokens(token_strings)
     
     # print the tree
     if verbose:
@@ -126,7 +128,7 @@ class jvox_screenreader():
 
     return speech
   
-  def gen_standalone_statemetns(self, text):
+  def gen_standalone_statements(self, text):
     '''
     Function to handle statements "else:", "try:", "except:"
     Simply read the text as it is
@@ -192,4 +194,21 @@ class jvox_screenreader():
       speech = "comment: " + text
 
     return speech
+
+  def gen_speech_based_on_tokens(self, token_strings):
+    '''
+    Generate speech from token strings. This function is used when the statement
+    cannot be parsed.
+    '''
+
+    # make each token more readable
+    readable_tokens = [utils.make_token_readable(token) for token in token_strings]
+
+    # join the tokens with spaces
+    speech = " ".join(readable_tokens)
+  
+    # read the speech
+    return speech
+
+  
 

@@ -101,14 +101,19 @@ def convert_if_stmt(listener, ctx:Python3Parser.If_stmtContext):
 
   # get the top level of test and body
   test = ctx.children[1].pyast_tree
-  body = convert_block_to_body(ctx.children[3])
+  if len(ctx.children) < 4:
+    # no body
+    body = [None]
+  else:
+    body = convert_block_to_body(ctx.children[3])
 
   # construct the ast.If node for the top level, ignore 'orelse" for now
   top_if_node = ast.If(test, body, [])
   ctx.pyast_tree = top_if_node
 
-  # if there is no elif or else, just return
-  if ctx.getChildCount() == 4:
+  # if there is no elif or else, 
+  # or there is no body for the if block, just return
+  if ctx.getChildCount() <= 4:
     return
 
   # process the elif and else until the list is done

@@ -31,3 +31,37 @@ def ast_visit_non_print(node, out_str, level=0):
                     ast_visit_non_print(item, out_str, level=level+1)
         elif isinstance(value, ast.AST):
             ast_visit_non_print(value, out_str, level=level+1)
+
+def make_token_readable(token_string):
+    '''
+    Make token string more readable
+    '''
+    # operators
+    if token_string == "=":
+        return "equals"
+    elif token_string == "+":
+        return "plus"
+    elif token_string == "-":
+        return "minus"
+
+    # braces
+    if token_string == "{":
+        return "left curly brace"
+    elif token_string == "}":
+        return "right curly brace"
+    elif token_string == "[":
+        return "left bracket"
+    elif token_string == "]":
+        return "right bracket"
+    
+    # underscore
+    if token_string == "_":
+        return "underscore"
+    
+    # avoid reading a/A as an article
+    if token_string == "a" or token_string == "A":
+        return token_string + "-"
+
+    # other tokens, just return the token string
+    return token_string
+

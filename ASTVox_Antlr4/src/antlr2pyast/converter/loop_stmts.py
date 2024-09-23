@@ -34,7 +34,10 @@ def convert_for_stmt(listener, ctx:Python3Parser.BlockContext):
 
   # generate the "body" from the block (children[5])
   # seems body is always a list
-  if type(ctx.children[5].pyast_tree) is list:
+  if len(ctx.children) < 6:
+    # no body
+    body = [None]
+  elif type(ctx.children[5].pyast_tree) is list:
     body = ctx.children[5].pyast_tree
   else:
     # childrent[5] is not a list, convert to list

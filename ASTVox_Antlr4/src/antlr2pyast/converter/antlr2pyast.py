@@ -45,6 +45,17 @@ def convert_tree(tree):
 
     return pyast_tree, converter
 
+def tokenize_stmt(stmt):
+    input_stream = antlr4.InputStream(stmt)
+    lexer = Python3Lexer(input_stream)
+
+    tokens = lexer.getAllTokens()
+
+    token_strings = [token.text for token in tokens]
+
+    return token_strings
+    
+
 # deprecated implementation
 # convert_tree: the main entrance function
 # It calls the convert function for each type of nodes
