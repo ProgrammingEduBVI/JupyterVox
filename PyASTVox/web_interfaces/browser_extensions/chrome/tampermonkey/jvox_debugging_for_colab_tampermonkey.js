@@ -12,10 +12,10 @@
 // @connect      localhost
 // ==/UserScript==
 
-console.log("JVox Debgging plugin start.");
+console.log("JVox Debugging plugin start.");
 
-//var server_url = "http://3.144.13.232/jvox";
-var server_url = "http://localhost:5000/";
+var server_url = "http://3.144.13.232/jvox";
+//var server_url = "http://localhost:5000/";
 
 // function to replace punctuation marks with its actual text name
 // so that text-to-speech will not ignore them
@@ -31,23 +31,23 @@ function jvox_make_puncs_readable(msg){
     msg = msg.replace("\':\'", "\'colon\'");
 
     // make '[' readable
-    msg = msg.replace("\'[\'", "\'left brace\'");
+    msg = msg.replace("\'[\'", "\'left bracket\'");
 
     // make ']' readable
-    msg = msg.replace("\']\'", "\'right brace\'");
+    msg = msg.replace("\']\'", "\'right bracket\'");
 
      // make '{' readable
-    msg = msg.replace("\'{\'", "\'left curly brace\'");
+    msg = msg.replace("\'{\'", "\'left curly bracket\'");
 
     // make '}' readable
-    msg = msg.replace("\'}\'", "\'right curly brace\'");
+    msg = msg.replace("\'}\'", "\'right curly bracket\'");
 
     return msg;
 }
 
 // create a common Audio object to read error messages
 let a = new Audio();
-let reading_rate = 1.3;
+let reading_rate = 3;
 
 // Use Google Text-to-Speech (TTS) to talk
 function jvox_gtts_speak(text, lang){
@@ -260,9 +260,17 @@ function jvox_jump_to_error_column(marker, uri){
         jvox_jump_to_error_column_name_error(marker, uri)
         return
     }
+    else if (marker.message.startsWith("AttributeError:")){
+        jvox_jump_to_error_column_attr_error(marker, uri)
+        return
+    }
+    else if (marker.message.startsWith("TypeError:")){
+        jvox_jump_to_error_column_type_error(marker, uri)
+        return
+    }
     else{
         // jump to line
-        console.log("JVox: no column to jump to, because last error type is not supported, last error message:", marker.message);
+        console.log("JVox: no column to jump to, because last error's type is not supported, last error message:", marker.message);
         jvox_jump_to_error_line(marker, uri)
         return
     }
@@ -382,11 +390,7 @@ function doc_keyUp(e) {
         console.log("JVox: jump to the line and column of last error.")
         jvox_jump_to_error_column(last_error_marker, last_error_uri);
     }
-    else if (e.altKey && e.ctrlKey && e.code === 'KeyT') {
-        // read last error marker's message
-        console.log("JVox: jump to the line and column of last error.");
-        jvox_jump_to_error_column_name_error(last_error_marker, last_error_uri);
-    }
+
 }
 
 // register the handler
@@ -427,7 +431,7 @@ function call_runtime_support_service(error_msg, code, line_no, support_type, ex
 
 // jump the error line and column for a name error
 function jvox_jump_to_error_column_name_error(marker, uri){
-    console.log("JVox: jumping to last error site for name error (line and column)");
+    console.log("JVox: jumping to last error site for last name error (line and column)");
 
     let support_type = "col_no";
 
@@ -446,9 +450,17 @@ function jvox_jump_to_error_column_name_error(marker, uri){
             error_cell.focus();
 
             // sound report to user
-            let msg = ("jumped to error line " + marker.startLineNumber.toString() +
-                       ", column " + response.response.col_no.toString())
-            jvox_gtts_speak(msg, "en-US");
+            if (response.response.col_no != 0 ){
+                // if col_no return is not 0
+                let msg = ("jumped to error line " + marker.startLineNumber.toString() +
+                           ", column " + response.response.col_no.toString())
+                jvox_gtts_speak(msg, "en-US");
+            }
+            else{
+                // if col_no return is 0, means not finding the error
+                let msg = ("jumped to error line " + marker.startLineNumber.toString() + ", column 1")
+                jvox_gtts_speak(msg, "en-US");
+            }
     }
 
 
@@ -461,4 +473,18 @@ function jvox_jump_to_error_column_name_error(marker, uri){
 
     return;
 
+}
+
+// jump the error line and column for an attribute error
+function jvox_jump_to_error_column_attr_error(marker, uri){
+    console.log("JVox: jumping to last error site for last attribute error (line and column)");
+    console.log("JVox: reusing the jump-to support for name error");
+    jvox_jump_to_error_column_name_error(marker, uri)
+}
+
+// jump the error line and column for an attribute error
+function jvox_jump_to_error_column_type_error(marker, uri){
+    console.log("JVox: jumping to last error site for last type error (line and column)");
+    console.log("JVox: reusing the jump-to support for name error");
+    jvox_jump_to_error_column_name_error(marker, uri)
 }
