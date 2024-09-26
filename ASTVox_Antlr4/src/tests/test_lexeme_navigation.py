@@ -11,6 +11,7 @@ import traceback
 
 # AST tree generation/conversion packages
 from token_navigation import lexeme_navigation as lex_nav
+from statement_chunking import statement_chunking as stmt_chunk
 import ast
 
 ####### print and compare each test case
@@ -26,7 +27,9 @@ parser.add_argument('-c', '--command',
                     help=("token navigation command: \n" +
                           "\t next: start of next token;\n" +
                           "\t pre: start of previous;\n" +
-                          "\t cur: start/stop of current token;\n"), 
+                          "\t cur: start/stop of current token;\n" +
+                          "\t chunking: break the statement into " + 
+                          "smaller chunks\n"), 
                     dest='command')
 args = parser.parse_args()
 
@@ -64,6 +67,10 @@ elif args.command == "cur":
     cur_token = lex_nav.find_lexeme_token_at_pos(args.stmt, cur_pos,
                                                  args.verbose)
     print("Current lexeme/token is", cur_token)
+elif args.command == "chunking":
+    # break the statement into smaller chunks
+    chunks = stmt_chunk.chunk_statement(args.stmt, cur_pos, 5, args.verbose)
+    print("Chunks are", chunks)
 else:
     print(f"Unknown command: args.command")
     parser.print_help()
