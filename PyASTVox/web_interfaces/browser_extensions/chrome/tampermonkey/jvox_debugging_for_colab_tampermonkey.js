@@ -377,12 +377,14 @@ function doc_keyUp(e) {
         ctrl_or_meta = e.ctrlKey;
     }
 
-    if (e.altKey && ctrl_or_meta && e.code === 'KeyE') {
+    if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyE') ||
+        ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyT') ){
         // alt+j => generate jvox speech
         console.log("JVox: got alt+ctrl+e")
         jvox_jump_to_error_line(last_error_marker, last_error_uri);
     }
-    else if (e.altKey && ctrl_or_meta && e.code === 'KeyS') {
+    else if (((!isMac) & e.altKey && e.ctrlKey && e.code === 'KeyS') ||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyS')){
         // turn on/off the automatic error message reading
         console.log("JVox: got alt+ctrl+s")
         read_error_immd = !read_error_immd;
@@ -394,17 +396,20 @@ function doc_keyUp(e) {
             jvox_gtts_speak(". Automatic error reading is off.", "en-US")
         }
     }
-    else if (e.altKey && ctrl_or_meta && e.code === 'KeyL') {
+    else if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyL')||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyL')){
         // read last error marker's message
         console.log("JVox: reading last error.")
         jvox_read_marker_message(last_error_marker);
     }
-    else if (e.altKey && ctrl_or_meta && e.code === 'KeyC') {
+    else if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyC') ||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyC')) {
         // read last error marker's message
         console.log("JVox: Single line syntax check.")
         jvox_syntax_check_current_line();
     }
-    else if (e.altKey && ctrl_or_meta && e.code === 'KeyG') {
+    else if (((!isMac) && e.altKey && ctrl_or_meta && e.code === 'KeyG')||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyJ')){
         // read last error marker's message
         console.log("JVox: jump to the line and column of last error.")
         jvox_jump_to_error_column(last_error_marker, last_error_uri);
@@ -423,7 +428,8 @@ function doc_keyUp(e) {
             jvox_gtts_speak("Line " + line_nu.toString(), "en-US")
         }
     }
-    else if (e.altKey && ctrl_or_meta && e.code === 'KeyI'){
+    else if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyI') ||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyI')){
         //
         let line_nu = jvox_get_cursor_line_number()
         console.log("JVox: got alt+ctrl/meta+N", e, "at line", line_nu)
