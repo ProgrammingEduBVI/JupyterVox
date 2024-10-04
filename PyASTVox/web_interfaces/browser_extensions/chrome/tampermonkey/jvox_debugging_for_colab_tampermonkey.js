@@ -285,33 +285,6 @@ function jvox_jump_to_error_column(marker, uri){
 }
 
 
-// find the text of the line at the cursor
-function jvox_get_cursor_line(){
-    let editors = unsafeWindow.monaco.editor.getEditors()
-
-    let i = 0;
-    let len = editors.length
-    let line = ""
-    for(i = 0; i < len ; i++){
-       let e = editors[i];
-       //console.log(e)
-       if (e.hasTextFocus()){
-           //console.log("has focus")
-           //console.log(e.getValue())
-           //console.log(e.getPosition())
-
-           let line_nu = e.getPosition().lineNumber;
-           let cell_txt = e.getValue();
-           let cell_txtArr = cell_txt.split('\n');
-           line = cell_txtArr[line_nu-1];
-
-           console.log("Line on cursor:" + line);
-       }
-    }
-
-    return line;
-}
-
 function jvox_syntax_check_current_line(){
     console.log("Syntax check for current line")
 
@@ -346,6 +319,34 @@ function jvox_syntax_check_current_line(){
     });
 
     return;
+}
+
+// find the text of the line at the cursor
+function jvox_get_cursor_line_number(){
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    let i = 0;
+    let len = editors.length
+    let line = ""
+    let line_nu = -1
+    for(i = 0; i < len ; i++){
+       let e = editors[i];
+       //console.log(e)
+       if (e.hasTextFocus()){
+           //console.log("has focus")
+           //console.log(e.getValue())
+           //console.log(e.getPosition())
+
+           line_nu = e.getPosition().lineNumber;
+           //let cell_txt = e.getValue();
+           //let cell_txtArr = cell_txt.split('\n');
+           //line = cell_txtArr[line_nu-1];
+
+           console.log("JVox cursor line number:", line_nu);
+       }
+    }
+
+    return line_nu;
 }
 
 function jvox_OnDidCreateEditor(editor){
@@ -408,6 +409,29 @@ function doc_keyUp(e) {
         console.log("JVox: jump to the line and column of last error.")
         jvox_jump_to_error_column(last_error_marker, last_error_uri);
     }
+    // ctrl+arrow keys for sounded navigation
+    else if (ctrl_or_meta && (e.code === 'ArrowUp'|| e.code === 'ArrowDown')){
+        //
+        console.log("JVox: got ctrl + arrow key", e)
+        jvox_move_cursor_line(e)
+    }
+    else if (e.code === 'ArrowUp'|| e.code === 'ArrowDown'){
+        //
+        let line_nu = jvox_get_cursor_line_number()
+        console.log("JVox: got arrow key", e, "at line", line_nu)
+        if (line_nu != -1){
+            jvox_gtts_speak("Line " + line_nu.toString(), "en-US")
+        }
+    }
+    else if (e.altKey && ctrl_or_meta && e.code === 'KeyI'){
+        //
+        let line_nu = jvox_get_cursor_line_number()
+        console.log("JVox: got alt+ctrl/meta+N", e, "at line", line_nu)
+        if (line_nu != -1){
+            jvox_gtts_speak("Line " + line_nu.toString(), "en-US")
+        }
+    }
+
 
 }
 
@@ -505,4 +529,76 @@ function jvox_jump_to_error_column_type_error(marker, uri){
     console.log("JVox: jumping to last error site for last type error (line and column)");
     console.log("JVox: reusing the jump-to support for name error");
     jvox_jump_to_error_column_name_error(marker, uri)
+}
+
+// find the text of the line at the cursor
+function jvox_get_cursor_line(){
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    let i = 0;
+    let len = editors.length
+    let line = ""
+    for(i = 0; i < len ; i++){
+       let e = editors[i];
+       //console.log(e)
+       if (e.hasTextFocus()){
+           //console.log("has focus")
+           //console.log(e.getValue())
+           //console.log(e.getPosition())
+
+           let line_nu = e.getPosition().lineNumber;
+           let cell_txt = e.getValue();
+           let cell_txtArr = cell_txt.split('\n');
+           line = cell_txtArr[line_nu-1];
+
+           console.log("Line on cursor:" + line);
+       }
+    }
+
+    return line;
+}
+
+// find the text of the line at the cursor
+function jvox_move_cursor_line(arrow_key){
+    let editors = unsafeWindow.monaco.editor.getEditors()
+
+    let i = 0;
+    let len = editors.length
+    let line = ""
+    for(i = 0; i < len ; i++){
+       let e = editors[i];
+       //console.log(e)
+       if (e.hasTextFocus()){
+           //console.log("has focus")
+           //console.log(e.getValue())
+           //console.log(e.getPosition())
+
+           // get current line number
+           let line_nu = e.getPosition().lineNumber;
+           let col_nu = e.getPosition().column;
+           // change the line number
+           if (arrow_key.code === 'ArrowUp'){
+               line_nu = line_nu - 1
+           }
+           else if (arrow_key.code === 'ArrowDown'){
+               line_nu = line_nu + 1
+           }
+
+           // move the cursor
+           e.setPosition({lineNumber: line_nu,
+                          column: col_nu});
+
+           // get the new column number, as sometimes, the
+           // move can fail (e.g., moving beyond the last line)
+           line_nu = e.getPosition().lineNumber;
+
+           // notify the user
+           jvox_gtts_speak("Line " + line_nu.toString(), "en-US")
+
+
+           console.log("Line on cursor:" + line);
+       }
+    }
+
+    return;
 }
