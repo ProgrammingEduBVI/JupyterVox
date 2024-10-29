@@ -54,7 +54,7 @@ function jvox_make_puncs_readable(msg){
 
 // create a common Audio object to read error messages
 let a = new Audio();
-let reading_rate = 3;
+let reading_rate = 2;
 
 // Use Google Text-to-Speech (TTS) to talk
 function jvox_gtts_speak(text, lang){
@@ -414,6 +414,7 @@ function doc_keyUp(e) {
         console.log("JVox: jump to the line and column of last error.")
         jvox_jump_to_error_column(last_error_marker, last_error_uri);
     }
+    /* Conflict with scree reader
     // ctrl+arrow keys for sounded navigation
     else if (ctrl_or_meta && (e.code === 'ArrowUp'|| e.code === 'ArrowDown')){
         //
@@ -437,7 +438,7 @@ function doc_keyUp(e) {
             jvox_gtts_speak("Line " + line_nu.toString(), "en-US")
         }
     }
-
+    */
 
 }
 
