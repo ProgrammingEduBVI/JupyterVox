@@ -79,6 +79,12 @@ function jvox_read_marker_message(marker){
     // read the error message
     let text_to_read = marker.message;
 
+    // remove the line number at the end of the message, "on line xx"
+    // b/c colab is reporting the wrong line number
+    const line_no_regex = /on line [0-9]+$/
+    console.log("JVox:found line no in error message, will remove:", text_to_read.match(line_no_regex))
+    text_to_read = text_to_read.replace(line_no_regex, "")
+
     // add line number to the message, if the message does not have it already
     if (text_to_read.indexOf("detected at line") == -1){
         let lineno_str = marker.startLineNumber.toString()
@@ -402,8 +408,8 @@ function doc_keyUp(e) {
         console.log("JVox: reading last error.")
         jvox_read_marker_message(last_error_marker);
     }
-    else if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyC') ||
-             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyC')) {
+    else if (((!isMac) && e.altKey && e.ctrlKey && e.code === 'KeyV') ||
+             ((isMac) && e.shiftKey && e.ctrlKey && e.code === 'KeyV')) {
         // read last error marker's message
         console.log("JVox: Single line syntax check.")
         jvox_syntax_check_current_line();
