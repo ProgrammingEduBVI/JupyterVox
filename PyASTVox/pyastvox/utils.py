@@ -1,5 +1,6 @@
 # utility functions
 import ast
+import re
 
 def str_node(node):
     if isinstance(node, ast.AST):
@@ -36,6 +37,10 @@ def make_token_readable(token_string):
     '''
     Make token string more readable
     '''
+    # space
+    if token_string == ' ':
+        return "space"
+    
     # operators
     if token_string == "=":
         return "equals"
@@ -83,3 +88,42 @@ def make_token_readable(token_string):
     # other tokens, just return the token string
     return token_string
 
+
+def make_statement_readable(stmt):
+    '''
+    Make token string more readable
+    '''
+
+    # replace spaces first
+    s = stmt.replace(' ', ' space ')
+    
+    # operators
+    s = s.replace("=", "equals")
+    s = s.replace("+", "plus")
+    s = s.replace("-", "minus")
+    s = s.replace("*", "asterisk")
+    s = s.replace("/", "slash")
+
+    # braces
+    s = s.replace("{", "left curly brace")
+    s = s.replace("}", "right curly brace")
+    s = s.replace("[", "left bracket")
+    s = s.replace("]", "right bracket")
+    
+    # underscore
+    s = s.replace("_", "underscore")
+
+    # quote
+    s = s.replace("\"", "quote")
+    s = s.replace("'", "single quote")
+    
+    # parenthesis
+    s = s.replace("(", "left paren")
+    s = s.replace(")", "right paren")
+    
+    # avoid reading a/A as an article
+    if token_string == "a" or token_string == "A":
+        return token_string + "-"
+
+    # other tokens, just return the token string
+    return s

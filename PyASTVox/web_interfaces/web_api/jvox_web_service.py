@@ -130,6 +130,29 @@ def runtime_error_support():
 
     return jsonify(dat)
 
+@app.route('/chunkify',methods=['POST'])
+def chunkify_statement():
+    # Retrieve the statement to chunkify
+    stmt = request.json['stmt']
+    cur_pos = int(request.json['cur_pos'])
+    chunk_len = int(request.json['chunk_len'])
+    command = request.json['command']
+    print(f"Statement to chunkify: {stmt} at position {cur_pos}, " +
+          f"with command {command}, and max chunk length {chunk_len}.")
+
+    # check the statement
+    ret_val = jvox.chunkify_statement(stmt, cur_pos, command, chunk_len, True)
+    # return the error message or correct confirmation message
+    dat = {"chunks":ret_val.chunks,
+           "new_pos":ret_val.new_pos,
+           "chunk_to_read":ret_val.chunk_to_read,
+           "error_message":ret_val.error_message,
+           "chunk_string":ret_val.chunk_string
+           }
+    print(f"Chunkify returns: {dat}")
+
+    return jsonify(dat)
+
 if __name__ == "__main__":
     jvox = jvox_interface.jvox_interface("default")
     print("hello jvox:", jvox)

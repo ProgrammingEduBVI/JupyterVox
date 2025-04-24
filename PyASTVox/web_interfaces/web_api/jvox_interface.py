@@ -31,6 +31,9 @@ from debug_support import single_line_check as one_chk
 from debug_support import code_snippet_check as snippet_chk
 from debug_support.runtime_error_support import entry_point as rt_support
 
+# import chunked reading packages
+from statement_chunking import statement_chunking as stmt_chunk
+
 class jvox_interface:
     vox_gen = None;
     jvox = None;
@@ -140,3 +143,118 @@ class jvox_interface:
                                                support_type, extra_data,
                                                verbose)
 
+    # break a statement into chunks
+    # command should be "next", "pre", "current"
+    def chunkify_statement(self, stmt, cur_pos, command, chunk_len, verbose):
+        # prepare return value
+        ret_val = types.SimpleNamespace()
+
+        # check if command is correct
+        if command != "next" and command != "pre" and command != "current":
+            ret_val.chunks = []
+            ret_val.new_pos = 0
+            ret_val.error_message = ("invalid command, " +
+                                     "likely incorrect implementation")
+            ret_val.chunk_to_read = ""
+            ret_val.chunk_string = ""
+            return ret_Val
+        
+        # break the statement into chunks and return the chunks
+        # Note I set cur_pos to 0 to chuck the whole statement
+        chunks = stmt_chunk.chunk_statement(stmt, cur_pos=0,
+                                            chunk_len=chunk_len,
+                                            verbose=verbose)
+
+        # find the current chuck given the cur_pos
+        cur_chunk_idx = 0
+        searched_chunks_len = 0
+        for cur_chunk in chunks:
+            searched_chunks_len += len(cur_chunk)
+            if searched_chunks_len > cur_pos:
+                break
+            cur_chunk_idx += 1
+
+        if verbose:
+            print(f"find current chunk idx: {cur_chunk_idx}")
+
+        # if searched_chunks_len <= cur_pos:
+        #     # cur_pos is at or beyond the end of the statement,
+        #     # return "end of statement"
+        #     ret_val.chunks = chunks
+        #     ret_val.new_pos = len(stmt) 
+        #     ret_val.chunk_to_read = "end of statement"
+        #     return ret_val
+
+        # find the chunk-to-return based on the command
+        if command == "next":
+            ret_chunk_idx = cur_chunk_idx + 1
+        elif command == "pre":
+            ret_chunk_idx = cur_chunk_idx - 1
+        elif command == "current":
+            ret_chunk_idx = cur_chunk_idx
+
+        # handle the corner cases for chunk-to return
+        if ret_chunk_idx >= len(chunks):
+            # chunk-to-return is beyond the end of the statement
+            ret_val.chunks = chunks
+            ret_val.new_pos = len(stmt)
+            ret_val.error_message = "end of statement"
+            ret_val.chunk_to_read = ""
+            ret_val.chunk_string = ""
+            return ret_val
+        elif ret_chunk_idx < 0:
+            # chunk-to-return is beyond the beginning of the statement
+            ret_val.chunks = chunks
+            ret_val.new_pos = 0
+            ret_val.error_message = "beginning of statement"
+            ret_val.chunk_to_read = ""
+            ret_val.chunk_string = ""
+            return ret_val
+
+        # handle the common case, where chunk-to-return is in the middle of
+        # the statement
+        ret_val.chunks = chunks
+        ret_val.error_message = ""
+        ret_val.new_pos = 0
+        for i in range(0, ret_chunk_idx):
+            ret_val.new_pos += len(chunks[i])
+
+        # make statement readable, we need help from tokenization
+        chunk_string = chunks[ret_chunk_idx]
+        tokens = token_navigation.tokenize(chunk_string)
+        if verbose:
+            print("Tokens of chunk are:",)    
+            for t in tokens:
+                print(t)
+                
+        # convert the statement chunk into a list of tokens and spaces
+        chunk_items = []
+        str_idx = 0
+        token_idx = 0
+        while (str_idx < len(chunk_string)):
+            # if current character is space
+            if chunk_string[str_idx] == ' ' :
+                chunk_items.append(chunk_string[str_idx])
+                str_idx += 1
+                continue
+            
+            # if current character is the start of a token
+            if str_idx == tokens[token_idx].start:
+                chunk_items.append(tokens[token_idx].text)
+                str_idx = tokens[token_idx].stop + 1
+                token_idx += 1
+                continue
+
+        # replace chunk items with readable strings
+        for i in range(len(chunk_items)):
+            chunk_items[i] = utils.make_token_readable(chunk_items[i])
+
+        if verbose:
+            print("Tokens and spaces of chunk are:")
+            print(chunk_items)
+
+        # return the reading and original string of the chunk    
+        ret_val.chunk_to_read = ' '.join(chunk_items)
+        ret_val.chunk_string = chunk_string
+
+        return ret_val
