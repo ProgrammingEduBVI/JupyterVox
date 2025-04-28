@@ -15,7 +15,6 @@ import ast
 # import check_chunk for readability check
 from . import check_chunk as cc
 
-
 def chunk_statement(stmt, cur_pos=0, chunk_len=5,verbose=False):
     '''
     Chunk a statement into smaller readable chunks. 
@@ -30,6 +29,8 @@ def chunk_statement(stmt, cur_pos=0, chunk_len=5,verbose=False):
     1. chunks: a list of chunks
     '''
 
+    ### Parse the statement
+    
     # parse the statement in to an ANTLR4 AST tree
     a4tree = antlr2pyast.generate_ast_tree(stmt)
 

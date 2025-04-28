@@ -33,13 +33,27 @@ def ast_visit_non_print(node, out_str, level=0):
         elif isinstance(value, ast.AST):
             ast_visit_non_print(value, out_str, level=level+1)
 
-def make_token_readable(token_string):
+def make_token_readable(token_string, read_space = False):
     '''
     Make token string more readable
     '''
     # space
-    if token_string == ' ':
+    if read_space and token_string == ' ':
         return "space"
+
+    # dot (member access)
+    if token_string == '.':
+        return "dot"
+
+    # comma
+    if token_string == ',':
+        return "comma"
+
+    # colon
+    if token_string == ':':
+        return "colon"
+    if token_string == ';':
+        return "semicolon"
     
     # operators
     if token_string == "=":
@@ -48,6 +62,28 @@ def make_token_readable(token_string):
         return "plus"
     elif token_string == "-":
         return "minus"
+    elif token_string == "/":
+        return "slash"
+    elif token_string == "%":
+        return "percent"
+    elif token_string == "**":
+        return "asterisk asterisk"
+    elif token_string == "+=":
+        return "plus equals"
+    elif token_string == "-=":
+        return "minus equals"
+    elif token_string == "*=":
+        return "star equals"
+    elif token_string == "/=":
+        return "slash equals"
+    elif token_string == "%=":
+        return "modulo equals"
+    elif token_string == "**=":
+        return "star star equals"
+    elif token_string == "//=":
+        return "slash slash equals"
+    elif token_string == "!=":
+        return "exclamation mark equals"
 
     # braces
     if token_string == "{":
@@ -77,9 +113,13 @@ def make_token_readable(token_string):
 
     # for strings, add "string"
     if token_string[0] == "\"":
-        return "string " + token_string
+        return make_string_readable(token_string)
     elif token_string[0] == "'":
-        return "string " + token_string
+        #return "string " + token_string
+        return make_string_readable(token_string)
+    elif token_string.startswith("b'"):
+        #return "string " + token_string
+        return make_string_readable(token_string)
     
     # avoid reading a/A as an article
     if token_string == "a" or token_string == "A":
@@ -89,41 +129,51 @@ def make_token_readable(token_string):
     return token_string
 
 
-def make_statement_readable(stmt):
+def make_string_readable(stmt):
     '''
     Make token string more readable
     '''
+    s = stmt
 
     # replace spaces first
-    s = stmt.replace(' ', ' space ')
+    # s = stmt.replace(' ', ' space ')
     
     # operators
-    s = s.replace("=", "equals")
-    s = s.replace("+", "plus")
-    s = s.replace("-", "minus")
-    s = s.replace("*", "asterisk")
-    s = s.replace("/", "slash")
+    s = s.replace("=", " equals ")
+    s = s.replace("+", " plus ")
+    s = s.replace("-", " minus ")
+    s = s.replace("*", " asterisk ")
+    s = s.replace("/", " slash ")
+    s = s.replace("%", " percent ")
 
     # braces
-    s = s.replace("{", "left curly brace")
-    s = s.replace("}", "right curly brace")
-    s = s.replace("[", "left bracket")
-    s = s.replace("]", "right bracket")
+    s = s.replace("{", " left curly brace ")
+    s = s.replace("}", " right curly brace ")
+    s = s.replace("[", " left bracket ")
+    s = s.replace("]", " right bracket ")
     
     # underscore
-    s = s.replace("_", "underscore")
+    s = s.replace("_", " underscore ")
 
     # quote
-    s = s.replace("\"", "quote")
-    s = s.replace("'", "single quote")
+    s = s.replace("\"", " , quote, ")
+    s = s.replace("'", " , single quote, ")
     
     # parenthesis
-    s = s.replace("(", "left paren")
-    s = s.replace(")", "right paren")
-    
-    # avoid reading a/A as an article
-    if token_string == "a" or token_string == "A":
-        return token_string + "-"
+    s = s.replace("(", " left paren ")
+    s = s.replace(")", " right paren ")
+
+    # colon
+    s = s.replace(":", " colon ")
+    s = s.replace(";", " semicolon ")
+
+    # slash
+    # quote
+    s = s.replace("\\", " backslash ")
+    s = s.replace("/", " slash ")
+
+    # dot
+    s = s. replace(".", " period ")
 
     # other tokens, just return the token string
     return s

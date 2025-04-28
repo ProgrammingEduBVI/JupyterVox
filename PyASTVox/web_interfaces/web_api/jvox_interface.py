@@ -145,25 +145,85 @@ class jvox_interface:
 
     # break a statement into chunks
     # command should be "next", "pre", "current"
+    # I think chunk navigation should be merged with token navigation
     def chunkify_statement(self, stmt, cur_pos, command, chunk_len, verbose):
+        # white to read the space after or inside a chunk.
+        # this is not for leading spaces/indentation, indentation will be read
+        read_space = False
+        
         # prepare return value
         ret_val = types.SimpleNamespace()
+        ret_val.error_message = ""
+        ret_val.chunk_to_read = ""
+        ret_val.chunk_string = ""
+
+        # check if current line is empty
+        if stmt.lstrip() == '':
+            # empty line
+            ret_val.chunks = []
+            ret_val.new_pos = 0
+            ret_val.error_message = "Empty line."
+            return ret_val
+
+        # check if at the end of a line
+        # need this when at the end of comment line
+        if len(stmt) == cur_pos and command != "pre":
+            # empty line
+            ret_val.chunks = []
+            ret_val.new_pos = cur_pos
+            ret_val.error_message = "end of statement"
+            return ret_val
+
+        # check if current line is comment
+        if stmt.lstrip().startswith('#'):
+            # comment line
+            ret_val.chunks = []
+            ret_val.new_pos = len(stmt)
+            ret_val.error_message = stmt.replace('#', 'hashtag, ')
+            return ret_val
+
+        # check if the line from cur_pos is comment
+        if stmt[cur_pos:].lstrip().startswith('#'):
+            # comment line
+            ret_val.chunks = []
+            ret_val.new_pos = len(stmt)
+            ret_val.error_message = stmt[cur_pos:].replace('#', 'hashtag ')
+            return ret_val
 
         # check if command is correct
-        if command != "next" and command != "pre" and command != "current":
+        if (command != "next" and command != "pre" and
+            command != "current" and command != "read_then_next"):
             ret_val.chunks = []
             ret_val.new_pos = 0
             ret_val.error_message = ("invalid command, " +
                                      "likely incorrect implementation")
-            ret_val.chunk_to_read = ""
-            ret_val.chunk_string = ""
             return ret_Val
+
+        # handle indentation and white spaces
+        # extract lead white space, if any
+        lead_white_spaces = stmt[:len(stmt)-len(stmt.lstrip())]
+        # remove white spaces
+        stmt = stmt.lstrip()
         
         # break the statement into chunks and return the chunks
         # Note I set cur_pos to 0 to chuck the whole statement
-        chunks = stmt_chunk.chunk_statement(stmt, cur_pos=0,
-                                            chunk_len=chunk_len,
-                                            verbose=verbose)
+        try:
+            chunks = stmt_chunk.chunk_statement(stmt, cur_pos=0,
+                                                chunk_len=chunk_len,
+                                                verbose=verbose)
+        except Exception as e:
+            print("Chunkify failed with exception:", e)
+            print("Fallback to tokenization")
+            # tokenization
+            tokens = token_navigation.tokenize(stmt)
+            # convert tokens to a list of strings
+            chunks = []
+            for token in tokens:
+                chunks.append(token.text)
+
+        # add leading white spaces back if any
+        if len(lead_white_spaces) != 0:
+            chunks.insert(0, lead_white_spaces)
 
         # find the current chuck given the cur_pos
         cur_chunk_idx = 0
@@ -192,6 +252,8 @@ class jvox_interface:
             ret_chunk_idx = cur_chunk_idx - 1
         elif command == "current":
             ret_chunk_idx = cur_chunk_idx
+        elif command == "read_then_next":
+            ret_chunk_idx = cur_chunk_idx
 
         # handle the corner cases for chunk-to return
         if ret_chunk_idx >= len(chunks):
@@ -219,7 +281,21 @@ class jvox_interface:
         for i in range(0, ret_chunk_idx):
             ret_val.new_pos += len(chunks[i])
 
+        if command == "read_then_next":
+            # in the case of command "read then jump to next", we need to
+            # move the cursor behind current chunk as well
+            ret_val.new_pos += len(chunks[ret_chunk_idx])
+
+        # if current chunk is leading indentation (white spaces)
+        # read the white spaces count
+        if len(chunks[ret_chunk_idx].lstrip()) == 0:
+            ret_val.chunk_to_read = f'{len(chunks[ret_chunk_idx])} white spaces.'
+            ret_val.chunk_string = chunks[ret_chunk_idx]
+            return ret_val
+
+        # current chunk is 
         # make statement readable, we need help from tokenization
+        # to generate the reading for each token correctly
         chunk_string = chunks[ret_chunk_idx]
         tokens = token_navigation.tokenize(chunk_string)
         if verbose:
@@ -247,14 +323,15 @@ class jvox_interface:
 
         # replace chunk items with readable strings
         for i in range(len(chunk_items)):
-            chunk_items[i] = utils.make_token_readable(chunk_items[i])
+            chunk_items[i] = utils.make_token_readable(chunk_items[i],
+                                                       read_space)
 
         if verbose:
             print("Tokens and spaces of chunk are:")
             print(chunk_items)
 
         # return the reading and original string of the chunk    
-        ret_val.chunk_to_read = ' '.join(chunk_items)
+        ret_val.chunk_to_read = ', '.join(chunk_items)
         ret_val.chunk_string = chunk_string
 
         return ret_val
