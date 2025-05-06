@@ -2,8 +2,8 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log("JVox screen reader background script started")
 });
 
-//var server_url = "http://3.144.13.232/jvox";
-var server_url = "http://127.0.0.1:5000/";
+var server_url = "http://3.144.13.232/jvox";
+//var server_url = "http://127.0.0.1:5000/";
 
 /*##########################################################
   Communication with content.js

@@ -46,7 +46,7 @@ function jvox_keyboard_shortcut(e) {
     // on Mac be Control + Options + corresponding letters
     let modifier_keys = e.altKey;
     if (isMac){
-        modifier_keys = e.ctrl && e.alt;
+        modifier_keys = e.ctrlKey && e.altKey;
     }
     
     // if (e.altKey && e.code === 'KeyJ') { // alt+n
