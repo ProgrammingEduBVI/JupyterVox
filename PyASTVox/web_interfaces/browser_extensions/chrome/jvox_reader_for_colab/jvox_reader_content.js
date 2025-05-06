@@ -9,10 +9,16 @@ s.src = chrome.runtime.getURL('jvox_reader_inject.js');
 s.onload = function() { this.remove(); }; 
 (document.head || document.documentElement).appendChild(s); //reappend?
 
+// get OS type, on MacOS, we will use command+options to avoid conflicting
+// with VoiceOver. Note this way of detecting OS is deprecated, although it
+// still works on Chrome. See https://stackoverflow.com/a/73619128 for a
+// better solution
+var isMac = navigator.platform.toUpperCase().indexOf('MAC')>=0;
+console.log("JVox SC content: isMac = ", isMac)
 
 /* #########################################################
    Text to speech
-   ##########################################################*/
+##########################################################*/
 // create a common Audio object to read statement chunks
 let a = new Audio();
 let reading_rate = 2;
@@ -32,11 +38,45 @@ function jvox_gtts_speak(text, lang){
    Hotkey handler
 ##########################################################*/
 
-// handler for JVox hotkey, alt+n.
-function jvox_keyboard_shortcut(e) {    
-    if (e.altKey && e.code === 'KeyJ') { // alt+n
-        console.log("JVox SR: alt+j pressed");
-	chunkify_stmt_to_inject_js("read_then_next");
+// handler for JVox hotkey.
+function jvox_keyboard_shortcut(e) {
+
+    // set the modifier keys for Windows/Linux and macOS
+    // Currently on Windows be alt + corresponding letters
+    // on Mac be Control + Options + corresponding letters
+    let modifier_keys = e.altKey;
+    if (isMac){
+        modifier_keys = e.ctrl && e.alt;
+    }
+    
+    // if (e.altKey && e.code === 'KeyJ') { // alt+n
+    //     console.log("JVox SR: alt+j pressed");
+    // 	chunkify_stmt_to_inject_js("read_then_next");
+    // }
+
+    if ((modifier_keys && e.code === 'KeyN') ||
+        (modifier_keys && e.code === 'KeyL') ){
+        // alt + N: jump to next chunk and read
+        console.log("JVox SR content: got alt+n, or ctrl+opt+L")
+        chunkify_stmt_to_inject_js("next");
+    }
+    else if ((modifier_keys && e.code === 'KeyP') ||
+             (modifier_keys && e.code === 'KeyK')){
+        // alt + N: jump to previous chunk and read
+	console.log("JVox SR content: got alt+p, or ctrl+opt+K")
+        chunkify_stmt_to_inject_js("pre");
+    }
+    else if ((modifier_keys && e.code === 'KeyX') ||
+             (modifier_keys && e.code === 'KeyX')){
+        // alt + X: jump to the beginning of current chunk and read
+		 console.log("JVox SR content: got alt+x, or ctrl+opt+X")
+        chunkify_stmt_to_inject_js("current");
+    }
+    else if ((modifier_keys && e.code === 'KeyJ') ||
+             (modifier_keys && e.code === 'KeyJ')){
+        // alt + N: jump to the beginning of current chunk and read
+        console.log("JVox SR content: got alt+j, or ctrl+opt+J")
+        chunkify_stmt_to_inject_js("read_then_next");
     }
 }
 // register the handler

@@ -66,6 +66,8 @@ def make_token_readable(token_string, read_space = False):
         return "slash"
     elif token_string == "%":
         return "percent"
+    elif token_string == "*":
+        return "asterisk"
     elif token_string == "**":
         return "asterisk asterisk"
     elif token_string == "+=":
