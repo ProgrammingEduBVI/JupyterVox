@@ -1,0 +1,8 @@
+{
+  "jupyter.lab.shortcuts": [],
+  "title": "jvox-lab-ext-screenreader",
+  "description": "jvox-lab-ext-screenreader settings.",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": false
+}
