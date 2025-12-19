@@ -4,11 +4,15 @@ from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
 
-# import JVox packages
+# import JVox interface
 import sys
-sys.path.append("../../../pyastvox")
-sys.path.append("../../../../ASTVox_Antlr4/src/antlr2pyast/")
-import jvox_screenreader
+from pathlib import Path
+# get the path to the interface package
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.append(f"{BASE_DIR}/../../../web_api/")
+
+import jvox_interface
+
 
 class HelloRouteHandler(APIHandler):
     # The following decorator should be present on all verb methods (head, get, post,
@@ -33,17 +37,34 @@ class JVoxScreenReaderRouteHandler(APIHandler):
     # def post(self):
     #     # input_data is a dictionary with a key "name"
     #     input_data = self.get_json_body()
-    #     data = {"greetings": "Hello {}, enjoy JupyterLab!".format(input_data["name"])}
+    #     data = {"greetings": "Hello {}, enjoy JupyterLab!".format(input_data["stmt"])}
     #     print(data)
     #     self.finish(json.dumps(data))
     def post(self):
-        data = {
-            'text':"got " + request.json['stmt'],
-        }
-        print("speech post:", request.json['stmt'])
-        print("speech post return:", data)
+    #     # data = {
+    #     #     'text':"got " + request.json['stmt'],
+    #     # }
+    #     # print("speech post:", request.json['stmt'])
+    #     # print("speech post return:", data)
+        jvox = jvox_interface.jvox_interface("default")
+        print("hello jvox:", jvox)
         
+        # retrieve statement
+        input_data = self.get_json_body()
+        stmt = input_data["stmt"]
+        print("web api get statement", stmt)
+
+        # generate speech with jvox
+        jvox_speech = jvox.gen_speech_for_one(stmt, True)
+        print(jvox_speech)
+
+        # prepare returned json
+        data = {
+            'speech': jvox_speech,
+        }
+
         self.finish(json.dumps(data))
+        
 
 def setup_route_handlers(web_app):
     host_pattern = ".*$"
