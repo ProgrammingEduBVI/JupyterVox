@@ -1,20 +1,22 @@
 #!/usr/bin/python3
 
-# interface between PyASTVox and the web service
+# system packages
+import traceback
+import types
 
 # packages for AST parsing
 import ast
 # packages for Text2Speech and audio manipulation
 from gtts import gTTS
 
-# help import sibling directories
+# import sibling directories
 import sys
-sys.path.append("../../pyastvox")
-sys.path.append("../../../ASTVox_Antlr4/src/antlr2pyast/")
+from pathlib import Path
 
-# other system packages
-import traceback
-import types
+# generate the path to JVox packages
+BASE_DIR = Path(__file__).resolve().parent
+sys.path.append(f"{BASE_DIR}/../../pyastvox/")
+sys.path.append(f"{BASE_DIR}/../../../ASTVox_Antlr4/src/antlr2pyast/")
 
 # load the Vox parser utilities
 import utils

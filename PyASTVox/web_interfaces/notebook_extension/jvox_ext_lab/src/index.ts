@@ -41,7 +41,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	}
 
 	// server extension connection test
-	requestAPI<any>('hello')
+	requestAPI('hello')
 	    .then(data => {
 		console.log(data);
 	    })
@@ -92,16 +92,17 @@ function jvox_read_line(notebookTracker: INotebookTracker)
 
     // send line to server extension
     const dataToSend = { stmt: lineText };
-    requestAPI<any>('speech', {
+    requestAPI('speech', {
 	body: JSON.stringify(dataToSend),
 	method: 'POST'
     })
 	.then(reply => {
 	    console.log(reply);
+	    jvox_handle_readline_response(reply);
 	})
 	.catch(reason => {
 	    console.error(
-		`Error on POST /jvox-lab-ext-screereader/speech ${dataToSend}.\n${reason}`
+		`Error on JVox read single line with ${dataToSend}.\n${reason}`
 	    );
 	}); 
 }
@@ -131,7 +132,68 @@ function jvox_add_readline_command(
     
     palette.addItem({ command: commandID, category: 'JVox Operations' });
 }
-    
 
+//
+// async function jvox_handle_readline_response(response: Response){
+//     console.log(response);
+
+//     // Determine what to do based on the Content-Type header
+//     const contentType = response.headers.get('Content-Type');
+
+//     console.log(contentType);
+
+//     // if (contentType?.includes('application/json')) {
+//     // 	// json type, use Google TTS to generate audio then speak
+//     // 	const data = await response.json();
+//     // 	console.log('Processed JSON:', data);
+
+//     // 	let speech = data.speech;
+	
+//     // 	jvox_gtts_speak(speech, "en");
+
+//     // 	return;
+//     // } 
+  
+//     // if (contentType?.includes('audio/mpeg')) {
+//     // audio blob type, directly play.
+//     const audioBlob = await response.blob();
+//     console.log('Processed Audio Blob of size:', audioBlob.size);
+    
+//     const audioUrl = URL.createObjectURL(audioBlob);
+    
+//     // Create and play audio
+//     const audio = new Audio(audioUrl);
+//     audio.play();
+//     // }
+
+//     //throw new Error('Unsupported content type returned from server');
+// }
+
+const audio = new Audio();
+
+async function jvox_handle_readline_response(response: Response){
+    console.log(response);
+
+    // 1. Unpack JSON
+    const data = await response.json();
+  
+    // Access your two fields
+    const speechText = data.speech;
+    const base64Audio = data.audio;
+
+    console.log("speech text:", speechText);
+
+    // 2. Play the Mock Audio
+    // The 'data:' prefix tells the browser the string IS the file
+    const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+    audio.src = audioUrl;
+
+    try {
+	await audio.play();
+	console.log("Audio playing successfully.");
+    } catch (err) {
+	console.error("Playback failed. Make sure you've interacted with the page.", err);
+    }
+}
 
 export default plugin;

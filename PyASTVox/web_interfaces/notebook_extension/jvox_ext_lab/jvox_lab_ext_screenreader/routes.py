@@ -1,8 +1,12 @@
 import json
+import base64
+import io
 
 from jupyter_server.base.handlers import APIHandler
 from jupyter_server.utils import url_path_join
 import tornado
+
+from gtts import gTTS
 
 # import JVox interface
 import sys
@@ -59,11 +63,52 @@ class JVoxScreenReaderRouteHandler(APIHandler):
         print(jvox_speech)
 
         # prepare returned json
-        data = {
-            'speech': jvox_speech,
-        }
+        # data = {
+        #     'speech': jvox_speech,
+        # }
 
-        self.finish(json.dumps(data))
+        # self.finish(json.dumps(data))
+
+        # generate the mp3 file
+        file_name = "/tmp/jvox.mp3"
+        jvox.gen_mp3_from_speech(jvox_speech, file_name)
+    
+        # return the speech
+        # return jsonify(jvox_speech)
+        # return send_file(file_name, mimetype="audio/mpeg")
+
+        # self.set_header("Content-Type", "audio/mpeg")
+        # with open(file_name, "rb") as f:
+        #     self.write(f.read())
+
+        # self.finish()
+
+        # Read the binary bytes of the file
+        # with open(file_name, "rb") as f:
+        #     mp3_bytes = f.read()
+
+        # 2. Generate speech using gTTS
+        tts = gTTS(text=jvox_speech, lang='en')
+        # 3. Save to a bytes buffer instead of a file
+        mp3_fp = io.BytesIO()
+        tts.write_to_fp(mp3_fp)
+        
+        # 4. Seek to the beginning of the buffer to read it
+        mp3_fp.seek(0)
+        mp3_bytes = mp3_fp.read()
+        
+
+        # Encode bytes to Base64 string
+        encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
+
+        # Prepare and send the JSON
+        result = {
+                "speech": jvox_speech,
+                "audio": encoded_audio
+            }
+
+        self.set_header("Content-Type", "application/json")
+        self.finish(json.dumps(result))
         
 
 def setup_route_handlers(web_app):
