@@ -42,8 +42,8 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
 	// server extension connection test
 	requestAPI('hello')
-	    .then(data => {
-		console.log(data);
+	    .then(response => {
+		jvox_server_hello_test(response);
 	    })
 	    .catch(reason => {
 		console.error(
@@ -56,6 +56,16 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	
     }
 };
+
+// A simple async function to print the reponse form "hello" endpoint,
+// for testing server connection
+async function jvox_server_hello_test(response: Response)
+{
+    const data = await response.json();
+    console.log(data);
+
+    return;
+}
 
 // read current line at cursor and send the line to the server to
 // retrieve reading
@@ -133,60 +143,29 @@ function jvox_add_readline_command(
     palette.addItem({ command: commandID, category: 'JVox Operations' });
 }
 
-//
-// async function jvox_handle_readline_response(response: Response){
-//     console.log(response);
 
-//     // Determine what to do based on the Content-Type header
-//     const contentType = response.headers.get('Content-Type');
-
-//     console.log(contentType);
-
-//     // if (contentType?.includes('application/json')) {
-//     // 	// json type, use Google TTS to generate audio then speak
-//     // 	const data = await response.json();
-//     // 	console.log('Processed JSON:', data);
-
-//     // 	let speech = data.speech;
-	
-//     // 	jvox_gtts_speak(speech, "en");
-
-//     // 	return;
-//     // } 
-  
-//     // if (contentType?.includes('audio/mpeg')) {
-//     // audio blob type, directly play.
-//     const audioBlob = await response.blob();
-//     console.log('Processed Audio Blob of size:', audioBlob.size);
-    
-//     const audioUrl = URL.createObjectURL(audioBlob);
-    
-//     // Create and play audio
-//     const audio = new Audio(audioUrl);
-//     audio.play();
-//     // }
-
-//     //throw new Error('Unsupported content type returned from server');
-// }
-
+// Create a static audio object for playing sound. This is because
+// creating an audio object right before playing causes an awkward
+// scilence/delay before the screenreading sound.
 const audio = new Audio();
-
+let reading_rate = 2; // increasing speech speed.
+// Process the speech in text and audio from the server extension
 async function jvox_handle_readline_response(response: Response){
     console.log(response);
 
-    // 1. Unpack JSON
+    // Unpack JSON
     const data = await response.json();
   
-    // Access your two fields
+    // Access the speech in text and audio
     const speechText = data.speech;
     const base64Audio = data.audio;
 
     console.log("speech text:", speechText);
 
-    // 2. Play the Mock Audio
-    // The 'data:' prefix tells the browser the string IS the file
+    // Extract BASE64 encoded audio bytes, and play the audio
     const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
     audio.src = audioUrl;
+    audio.playbackRate = reading_rate;
 
     try {
 	await audio.play();

@@ -3,6 +3,7 @@
 # system packages
 import traceback
 import types
+import io
 
 # packages for AST parsing
 import ast
@@ -58,6 +59,21 @@ class jvox_interface:
         print("jvox created mp3 file at", file_name)
 
         return
+
+    # generate the audio MP3 bytes from Google TTS
+    def gen_mp3_bytes_from_speech_gtts(self, speech):
+        # Generate speech using gTTS
+        tts = gTTS(text=speech, lang='en')
+        
+        # Save to a bytes buffer instead of a file
+        mp3_fp = io.BytesIO()
+        tts.write_to_fp(mp3_fp)
+        
+        # Seek to the beginning of the buffer to read it
+        mp3_fp.seek(0)
+        mp3_bytes = mp3_fp.read()
+
+        return mp3_bytes
 
     # find next token
     def find_next_token_start(self, stmt, cur_pos, verbose):
