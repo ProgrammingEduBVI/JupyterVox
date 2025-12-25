@@ -5,11 +5,19 @@ import {
 
 import { ISettingRegistry } from '@jupyterlab/settingregistry';
 
-import { INotebookTracker } from '@jupyterlab/notebook';
-import { CodeMirrorEditor } from '@jupyterlab/codemirror';
+import { INotebookTracker, NotebookActions } from '@jupyterlab/notebook';
 import { ICommandPalette } from '@jupyterlab/apputils';
+import { ILSPDocumentConnectionManager } from '@jupyterlab/lsp';
 
 import { requestAPI } from './request';
+
+/**
+ * JVox packages
+ */
+import { jvox_add_readline_command } from './jvox_read_single_line'
+import {
+    jvox_debugSupport
+} from './jvox_debug_support'
 
 /**
  * Initialization data for the jvox-lab-ext-screenreader extension.
@@ -18,12 +26,13 @@ const plugin: JupyterFrontEndPlugin<void> = {
     id: 'jvox-lab-ext-screenreader:plugin',
     description: 'A JupyterLab extension for JVox for screen reading',
     autoStart: true,
-    requires: [INotebookTracker, ICommandPalette],
+    requires: [INotebookTracker, ICommandPalette, ILSPDocumentConnectionManager],
     optional: [ISettingRegistry],
     activate: (
 	app: JupyterFrontEnd,
 	notebookTracker: INotebookTracker,
 	palette: ICommandPalette,
+	lspManager: ILSPDocumentConnectionManager,
 	settingRegistry: ISettingRegistry | null
     ) => {
 	console.log('JupyterLab extension jvox-lab-ext-screenreader is activated!');
@@ -53,7 +62,27 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	
 	// add the command of JVox single-line screen read 
 	jvox_add_readline_command(app, notebookTracker, palette);
-	
+
+	/*
+	 * Register JVox debug support
+	 */
+	const jvox_debug = new jvox_debugSupport();
+	// register an event handler to process the 
+	// NotebookActions.executed.connect(jvox_on_execution_finished);
+	// Use a wrapper to pass the extra parameters
+	NotebookActions.executed.connect((sender, args) => {
+	    jvox_debug.jvox_onExecutionFinished(sender,
+						args,
+						notebookTracker,
+						lspManager);
+	});
+
+	// register an event handler to monitor the connection signal
+	// to LSP server
+	lspManager.connected.connect((manager, connectionData) => {
+		const { connection, virtualDocument } = connectionData;
+	    jvox_debug.jvox_onLSPConnected(notebookTracker, manager, connection, virtualDocument);
+	});
     }
 };
 
@@ -65,114 +94,6 @@ async function jvox_server_hello_test(response: Response)
     console.log(data);
 
     return;
-}
-
-// read current line at cursor and send the line to the server to
-// retrieve reading
-function jvox_read_line(notebookTracker: INotebookTracker)
-{
-    console.log("in function");
-    const panel = notebookTracker.currentWidget;
-    if (!panel) {
-	console.warn('No active notebook');
-	return;
-    }
-		
-    const cell = panel.content.activeCell;
-    if (!cell) {
-	console.warn('No active cell');
-	return;
-    }
-    
-    const editor = cell.editor;
-    if (!(editor instanceof CodeMirrorEditor)) {
-	console.warn('Editor is not CodeMirror');
-	return;
-    }
-    
-    const cm = editor.editor; // CodeMirror 6 EditorView
-    const cursor = cm.state.selection.main.head;
-    const line = cm.state.doc.lineAt(cursor);
-    
-    const lineText = line.text;
-    const lineNumber = line.number;
-    
-    // log the line
-    console.log(`Line ${lineNumber}: ${lineText}`);
-
-    // send line to server extension
-    const dataToSend = { stmt: lineText };
-    requestAPI('speech', {
-	body: JSON.stringify(dataToSend),
-	method: 'POST'
-    })
-	.then(reply => {
-	    console.log(reply);
-	    jvox_handle_readline_response(reply);
-	})
-	.catch(reason => {
-	    console.error(
-		`Error on JVox read single line with ${dataToSend}.\n${reason}`
-	    );
-	}); 
-}
-
-// register the command for JVox single-line screen read
-function jvox_add_readline_command(
-    app: JupyterFrontEnd,
-    notebookTracker: INotebookTracker,
-    palette: ICommandPalette)
-{
-
-    // add new command that read current line at cursor
-    const { commands } = app;
-    const commandID = 'jvox:read-cursor-line';
-    
-    commands.addCommand(commandID, {
-	label: 'Read Current Cursor Line',
-	execute: () => jvox_read_line(notebookTracker)
-    });
-    
-    // Register a default hotkey: Ctrl+Alt+J (Cmd+Alt+J on macOS)
-    app.commands.addKeyBinding({
-	command: commandID,
-	keys: ['Accel Alt J'],
-	selector: '.jp-Notebook.jp-mod-editMode'
-    });
-    
-    palette.addItem({ command: commandID, category: 'JVox Operations' });
-}
-
-
-// Create a static audio object for playing sound. This is because
-// creating an audio object right before playing causes an awkward
-// scilence/delay before the screenreading sound.
-const audio = new Audio();
-let reading_rate = 2; // increasing speech speed.
-// Process the speech in text and audio from the server extension
-async function jvox_handle_readline_response(response: Response){
-    console.log(response);
-
-    // Unpack JSON
-    const data = await response.json();
-  
-    // Access the speech in text and audio
-    const speechText = data.speech;
-    const base64Audio = data.audio;
-
-    console.log("speech text:", speechText);
-
-    // Extract BASE64 encoded audio bytes, and play the audio
-    const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
-    audio.src = audioUrl;
-    audio.playbackRate = reading_rate;
-
-    try {
-	await audio.play();
-	console.log("Audio playing successfully.");
-    } catch (err) {
-	console.error("Playback failed. Make sure you've interacted with the page.", err);
-    }
 }
 
 export default plugin;
