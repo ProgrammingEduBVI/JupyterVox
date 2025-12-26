@@ -12,7 +12,7 @@ import {
 	IVirtualPosition
 } from '@jupyterlab/lsp';
 
-// import { requestAPI } from './request';
+//import { requestAPI } from './request';
 
 //import { EditorView } from '@codemirror/view';
 //import { diagnosticCount, forceLinting } from '@codemirror/lint';
@@ -23,7 +23,7 @@ import { CodeEditor } from '@jupyterlab/codeeditor';
 // data types use for communication with LSP server
 import * as lsProtocol from 'vscode-languageserver-protocol';
 
-//import { jvox_speak } from './jvox_utils';
+import { jvox_readSpeech } from './jvox_audio_request';
 
 export class jvox_debugSupport {
 	private documentUri: string = "";
@@ -69,31 +69,60 @@ export class jvox_debugSupport {
 
 				const errorLineNo = this.jvox_getErrorLineNo(traceback);
 
-				const diagnostic = this.jvox_findDiagnosticbyError(cell.editor, evalue, errorLineNo - 1);
+				if (ename == "TypeError") {
 
-				console.log("Matched Error to Diagnostic: ", diagnostic);
+					const diagnostic = this.jvox_findDiagnosticbyError(cell.editor, evalue, errorLineNo - 1);
 
-				// store this error as last error 
-				if (diagnostic) {
+					console.log("Matched Error to Diagnostic: ", diagnostic);
+
+					// store this error as last error 
+					if (diagnostic) {
+						this.lastError = new jvox_lastError();
+						this.lastError.diagnostic = diagnostic;
+						this.lastError.message = evalue;
+						this.lastError.type = ename;
+						this.lastError.traceback = traceback;
+						console.log("JVox last error object:", this.lastError);
+					} else {
+						this.lastError = undefined;
+					}
+				} else {
 					this.lastError = new jvox_lastError();
-					this.lastError.diagnostic = diagnostic;
+					this.lastError.diagnostic = undefined;
 					this.lastError.message = evalue;
 					this.lastError.type = ename;
 					this.lastError.traceback = traceback;
 					console.log("JVox last error object:", this.lastError);
-				} else {
-					this.lastError = undefined;
+
 				}
 
-				// read the error out
-				// Remove the text in the last parenthesis from evalue
-				const cleanedMessage = typeof evalue === 'string'
-					? evalue.replace(/\s*\([^)]*\)\s*$/, '')
-					: evalue;
-
-				console.debug("Error message to read: ", cleanedMessage);
+				// read the last error out laud
+				this.jvox_readLastError();
 			}
 		}
+	}
+
+	/**
+	 * Read last error out
+	 * @returns 
+	 */
+	private jvox_readLastError() {
+		if (!this.lastError) {
+			console.debug("JVox: no last error to read");
+			return;
+		}
+
+		// Remove the text in the last parenthesis from error message
+		const cleanedMessage = typeof this.lastError?.message === 'string'
+			? this.lastError?.message.replace(/\s*\([^)]*\)\s*$/, '')
+			: this.lastError?.message;
+
+		const errorToRead = this.lastError.type + ": " + cleanedMessage;	
+		console.debug("JVox: Error message to read: ", errorToRead);
+
+		jvox_readSpeech(errorToRead);
+
+		return;
 	}
 
 	/**

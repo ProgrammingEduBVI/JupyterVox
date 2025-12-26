@@ -17,7 +17,7 @@ export async function requestAPI(
     const settings = ServerConnection.makeSettings();
     const requestUrl = URLExt.join(
 	settings.baseUrl,
-	'jvox-lab-ext-screenreader', // our server extension's API namespace
+	'jvox-lab-ext', // our server extension's API namespace
 	endPoint
     );
     

@@ -45,7 +45,7 @@ function jvox_read_line(notebookTracker: INotebookTracker)
 
     // send line to server extension
     const dataToSend = { stmt: lineText };
-    requestAPI('speech', {
+    requestAPI('readline', {
 	body: JSON.stringify(dataToSend),
 	method: 'POST'
     })
