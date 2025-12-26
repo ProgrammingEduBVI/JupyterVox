@@ -441,7 +441,7 @@ export class jvox_debugSupport {
 		app.commands.addKeyBinding({
 			command: commandID,
 			keys: ['Accel Alt E'],
-			selector: '.jp-Notebook.jp-mod-editMode'
+			selector: '.jp-Notebook'
 		});
 
 		palette.addItem({ command: commandID, category: 'JVox Operations' });
