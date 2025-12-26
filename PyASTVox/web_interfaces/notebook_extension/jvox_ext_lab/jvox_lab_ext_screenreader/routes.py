@@ -15,11 +15,6 @@ BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(f"{BASE_DIR}/../../../web_api/")
 sys.path.append(BASE_DIR)
 
-print("base: ", BASE_DIR)
-
-for path in sys.path:
-    print(path)
-
 import jvox_interface
 
 # I am not sure why additional Python files in this directory cannot

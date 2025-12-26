@@ -35,55 +35,59 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	lspManager: ILSPDocumentConnectionManager,
 	settingRegistry: ISettingRegistry | null
     ) => {
-	console.log('JupyterLab extension jvox-lab-ext-screenreader is activated!');
+		console.log('JupyterLab extension jvox-lab-ext-screenreader is activated!');
 
-	// initialize setting registry
-	if (settingRegistry) {
-	    settingRegistry
-		.load(plugin.id)
-		.then(settings => {
-		    console.log('jvox-lab-ext-screenreader settings loaded:', settings.composite);
-		})
-		.catch(reason => {
-		    console.error('Failed to load settings for jvox-lab-ext-screenreader.', reason);
+		// initialize setting registry
+		if (settingRegistry) {
+			settingRegistry
+				.load(plugin.id)
+				.then(settings => {
+					console.log('jvox-lab-ext-screenreader settings loaded:', settings.composite);
+				})
+				.catch(reason => {
+					console.error('Failed to load settings for jvox-lab-ext-screenreader.', reason);
+				});
+		}
+
+		// server extension connection test
+		requestAPI('hello')
+			.then(response => {
+				jvox_server_hello_test(response);
+			})
+			.catch(reason => {
+				console.error(
+					`The jvox_lab_ext_screenreader server extension appears to be missing.\n${reason}`
+				);
+			});
+
+		// add the command of JVox single-line screen read 
+		jvox_add_readline_command(app, notebookTracker, palette);
+
+		/*
+		 * Register JVox debug support
+		 */
+		const jvox_debug = new jvox_debugSupport();
+		// register an event handler to process the 
+		// NotebookActions.executed.connect(jvox_on_execution_finished);
+		// Use a wrapper to pass the extra parameters
+		NotebookActions.executed.connect((sender, args) => {
+			jvox_debug.jvox_onExecutionFinished(sender,
+				args,
+				notebookTracker,
+				lspManager);
 		});
+
+		// register an event handler to monitor the connection signal
+		// to LSP server
+		lspManager.connected.connect((manager, connectionData) => {
+			const { connection, virtualDocument } = connectionData;
+			jvox_debug.jvox_onLSPConnected(notebookTracker, manager, connection, virtualDocument);
+		});
+
+		// add commands for JVox debug support
+		jvox_debug.jvox_registerDebugSupportCommands(app, notebookTracker, palette);
+
 	}
-
-	// server extension connection test
-	requestAPI('hello')
-	    .then(response => {
-		jvox_server_hello_test(response);
-	    })
-	    .catch(reason => {
-		console.error(
-		    `The jvox_lab_ext_screenreader server extension appears to be missing.\n${reason}`
-		);
-	    });
-	
-	// add the command of JVox single-line screen read 
-	jvox_add_readline_command(app, notebookTracker, palette);
-
-	/*
-	 * Register JVox debug support
-	 */
-	const jvox_debug = new jvox_debugSupport();
-	// register an event handler to process the 
-	// NotebookActions.executed.connect(jvox_on_execution_finished);
-	// Use a wrapper to pass the extra parameters
-	NotebookActions.executed.connect((sender, args) => {
-	    jvox_debug.jvox_onExecutionFinished(sender,
-						args,
-						notebookTracker,
-						lspManager);
-	});
-
-	// register an event handler to monitor the connection signal
-	// to LSP server
-	lspManager.connected.connect((manager, connectionData) => {
-		const { connection, virtualDocument } = connectionData;
-	    jvox_debug.jvox_onLSPConnected(notebookTracker, manager, connection, virtualDocument);
-	});
-    }
 };
 
 // A simple async function to print the reponse form "hello" endpoint,
