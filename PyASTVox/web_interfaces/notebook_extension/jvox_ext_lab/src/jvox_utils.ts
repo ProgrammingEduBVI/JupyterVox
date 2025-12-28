@@ -2,6 +2,9 @@
  * JVox utilities
  */
 
+import { INotebookTracker } from '@jupyterlab/notebook';
+import { CodeEditor } from '@jupyterlab/codeeditor';
+
 /**
  *  play sound
  */
@@ -27,6 +30,7 @@ export async function jvox_speak(audioUrl: string){
  * Common function to process JVox server audio response
  * @param response 
  */
+/*
 export async function jvox_handleAudioResponse(response: Response)
 {
     console.debug("JVox audio response:", response);
@@ -43,4 +47,39 @@ export async function jvox_handleAudioResponse(response: Response)
     // Extract BASE64 encoded audio bytes, and play the audio
     const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
     jvox_speak(audioUrl);
+} */
+
+// get the text at, and the position of, current cursor
+export function jvox_getLineAndCursor(notebookTracker: INotebookTracker
+): { lineText: string | undefined, 
+    line: number, 
+    column: number, 
+    editor: CodeEditor.IEditor } | null {
+    const panel = notebookTracker.currentWidget;
+    if (!panel) {
+        console.warn('JVox: No active notebook');
+        return null;
+    }
+
+    const cell = panel.content.activeCell;
+    if (!cell) {
+        console.warn('JVox: No active cell');
+        return null;
+    }
+
+    const editor = cell.editor;
+    if (!editor) {
+        console.warn('JVox: No active editor');
+        return null;
+    }
+
+    const cursorPos = editor.getCursorPosition()
+    const text = editor.getLine(cursorPos.line)
+
+    return {
+        lineText: text,
+        line: cursorPos.line,
+        column: cursorPos.column,
+        editor: editor,
+    };
 }

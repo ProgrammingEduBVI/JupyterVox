@@ -10,6 +10,8 @@ import { requestAPI } from './request';
 
 import { jvox_speak } from './jvox_utils';
 
+import { JVoxCommandRegistry } from './jvox_command_registry'; // make sure this import is present
+
 
 // read current line at cursor and send the line to the server to
 // retrieve reading
@@ -69,18 +71,24 @@ export function jvox_add_readline_command(
 
     // add new command that read current line at cursor
     const { commands } = app;
-    const commandID = 'jvox:read-cursor-line';
     
+    // Use the command registry to get the current line command definition
+    const commandObj = JVoxCommandRegistry.getCommandById('jvox:read-line-at-Cursor'); // note registry uses 'read-line-at-Cursor'
+    if (!commandObj) {
+        console.error("JVox command registry: command 'jvox:read-line-at-Cursor' not found.");
+        return;
+    }
+    const commandID = commandObj.id;
+
     commands.addCommand(commandID, {
-	label: 'Read Current Cursor Line',
-	execute: () => jvox_read_line(notebookTracker)
+        label: commandObj.label,
+        execute: () => jvox_read_line(notebookTracker)
     });
     
-    // Register a default hotkey: Ctrl+Alt+J (Cmd+Alt+J on macOS)
     app.commands.addKeyBinding({
-	command: commandID,
-	keys: ['Accel Alt J'],
-	selector: '.jp-Notebook.jp-mod-editMode'
+        command: commandID,
+        keys: commandObj.hotkeys,
+        selector: commandObj.selector
     });
     
     palette.addItem({ command: commandID, category: 'JVox Operations' });

@@ -13,18 +13,14 @@ import {
 	IVirtualPosition
 } from '@jupyterlab/lsp';
 
-//import { requestAPI } from './request';
-
-//import { EditorView } from '@codemirror/view';
-//import { diagnosticCount, forceLinting } from '@codemirror/lint';
-//import { CodeMirrorEditor } from '@jupyterlab/codemirror';
-
 import { CodeEditor } from '@jupyterlab/codeeditor';
 
 // data types use for communication with LSP server
 import * as lsProtocol from 'vscode-languageserver-protocol';
 
 import { jvox_readSpeech } from './jvox_audio_request';
+
+import { JVoxCommandRegistry } from './jvox_command_registry';
 
 export class jvox_debugSupport {
 	private documentUri: string = "";
@@ -107,21 +103,30 @@ export class jvox_debugSupport {
 	}
 
 	/**
+	 * Remove the Python file name from the error message, and add error type to the begain.
+	 * Some how the error message I got from the cell outputs has Python file name.
+	 */
+	private jvox_prepareErrorMessage(errorType: string, 
+		errorMsg: string) : string {
+		// Remove the text in the last parenthesis from error message
+		const cleanedMessage = errorMsg.replace(/\s*\([^)]*\)\s*$/, '');
+
+		const errorToRead = errorType + ": " + cleanedMessage;		
+
+		return errorToRead;
+	}
+	/**
 	 * Read last error out
 	 * @returns 
 	 */
 	private jvox_readLastError() {
+
 		if (!this.lastError) {
 			console.debug("JVox: no last error to read");
 			return;
 		}
-
-		// Remove the text in the last parenthesis from error message
-		const cleanedMessage = typeof this.lastError?.message === 'string'
-			? this.lastError?.message.replace(/\s*\([^)]*\)\s*$/, '')
-			: this.lastError?.message;
-
-		const errorToRead = this.lastError.type + ": " + cleanedMessage;	
+		
+		const errorToRead = this.jvox_prepareErrorMessage(this.lastError.type, this.lastError.message);
 		console.debug("JVox: Error message to read: ", errorToRead);
 
 		jvox_readSpeech(errorToRead);
@@ -422,70 +427,222 @@ export class jvox_debugSupport {
 		} */
 	}
 
+	// syntax check of current line
+	/**
+	 * Checks if there is a diagnostic that matches the current cursor position
+	 * in the currently focused cell as determined by the notebook tracker.
+	 * If found, reads the error message using jvox_readSpeech.
+	 * If not found, reads "This line is correct".
+	 * @param notebookTracker The tracker used to find the current active/focused cell.
+	 */
+	public jvox_readDiagnosticAtCursor(notebookTracker: INotebookTracker): void {
+		const panel = notebookTracker.currentWidget;
+		if (!panel || !panel.content || !panel.content.activeCell) {
+			console.debug("JVox: cannot locate focused cell");
+			return;
+		}
+
+		const cellWidget = panel.content.activeCell;
+		const cellEditor = cellWidget.editor;
+		if (!cellEditor) {
+			console.debug("JVox: cannot obtain the editor of focused cell");
+			return;
+		}
+
+		const cursor = cellEditor.getCursorPosition();
+		const line = cursor.line;
+
+		for (const diagnostic of this.diagnostics) {
+			if (diagnostic.cell?.uuid !== cellEditor.uuid) {
+				continue;
+			}
+			if (diagnostic.startLine === line) {
+				/* const errorToRead = this.jvox_prepareErrorMessage(diagnostic.type, 
+					diagnostic.message); */
+				// Remove "(detected at line xxx)" from the message if present
+				const cleanMessage = diagnostic.message.replace(/\s*\(detected at line \d+\)\s*$/, '');
+				jvox_readSpeech(cleanMessage);
+				return;
+			}
+		}
+		jvox_readSpeech("This line is correct");
+	}
+
+	// Function to update diagnostic message with cell line number
+	private jvox_getMessageWithCellLine(diagnostic: any): string {
+		let updatedMessage = diagnostic.message;
+		if (diagnostic.cell && typeof diagnostic.startLine === "number" && diagnostic.startLine >= 0) {
+			const cellLineNum = diagnostic.startLine + 1;
+			updatedMessage = updatedMessage.replace(
+				new RegExp(`line\\s+\\d+\\b`, "g"),
+				`line ${cellLineNum}`
+			);
+		}
+		return updatedMessage;
+	}
+
+	/**
+	 * Reads the error message of the first diagnostic of the currently focused cell.
+	 * If there is no diagnostic, reads "This cell is correct".
+	 * @param notebookTracker The tracker used to find the current active/focused cell.
+	 */
+	public jvox_readFirstDiagnosticOfCell(notebookTracker: INotebookTracker): void {
+		const panel = notebookTracker.currentWidget;
+		if (!panel || !panel.content || !panel.content.activeCell) {
+			console.debug("JVox: cannot locate focused cell");
+			return;
+		}
+
+		const cellWidget = panel.content.activeCell;
+		const cellEditor = cellWidget.editor;
+		if (!cellEditor) {
+			console.debug("JVox: cannot obtain the editor of focused cell");
+			return;
+		}
+
+		const firstDiagnostic = this.diagnostics.find(
+			diagnostic => diagnostic.cell?.uuid === cellEditor.uuid
+		);
+
+		if (firstDiagnostic) {
+			jvox_readSpeech(this.jvox_getMessageWithCellLine(firstDiagnostic));
+			//jvox_readSpeech(firstDiagnostic.message);
+		} else {
+			jvox_readSpeech("This cell is correct");
+		}
+	}
+
 	// register read last error command
 	private jvox_registerReadLastErrorCommand(
 		app: JupyterFrontEnd,
 		notebookTracker: INotebookTracker,
 		palette: ICommandPalette) {
 
-		// add new command that read current line at cursor
+		// add new command that reads last error
 		const { commands } = app;
-		const commandID = 'jvox:read-last-error';
+		const commandObj = JVoxCommandRegistry.getCommandById('jvox:read-last-error');
+		if (!commandObj) {
+			console.error("JVox command registry: command 'jvox:read-last-error' not found.");
+			return;
+		}
 
-		commands.addCommand(commandID, {
-			label: 'Read Current Cursor Line',
+		commands.addCommand(commandObj.id, {
+			label: commandObj.label,
 			execute: () => this.jvox_readLastError()
 		});
 
-		// Register a default hotkey: Ctrl+Alt+J (Cmd+Alt+J on macOS)
 		app.commands.addKeyBinding({
-			command: commandID,
-			keys: ['Accel Alt E'],
-			selector: '.jp-Notebook'
+			command: commandObj.id,
+			keys: commandObj.hotkeys,
+			selector: commandObj.selector
 		});
 
-		palette.addItem({ command: commandID, category: 'JVox Operations' });
+		palette.addItem({ command: commandObj.id, category: 'JVox Operations' });
 	}
 
-	// register read last error command
+	// register goto last error commands using JvoxCommandRegistry
 	private jvox_registerGotoLastErrorCommand(
 		app: JupyterFrontEnd,
 		notebookTracker: INotebookTracker,
 		palette: ICommandPalette) {
 
-		// add new command that read current line at cursor
 		const { commands } = app;
-		const commandID_gotoColumn = 'jvox:goto-last-error-column';
-		const commandID_gotoLineOnly = 'jvox:goto-last-error-line';
 
-		// register go to last error's line and column command
-		commands.addCommand(commandID_gotoColumn, {
-			label: 'Read Current Cursor Line',
+		const commandObj_gotoColumn = JVoxCommandRegistry.getCommandById('jvox:jump-to-last-error-column');
+		const commandObj_gotoLineOnly = JVoxCommandRegistry.getCommandById('jvox:goto-last-error-line');
+
+		if (!commandObj_gotoColumn) {
+			console.error("JVox command registry: command 'jvox:jump-to-last-error-column' not found.");
+			return;
+		}
+		if (!commandObj_gotoLineOnly) {
+			console.error("JVox command registry: command 'jvox:goto-last-error-line' not found.");
+			return;
+		}
+
+		// Register command for jumping to last error's line and column
+		commands.addCommand(commandObj_gotoColumn.id, {
+			label: commandObj_gotoColumn.label,
 			execute: () => this.jvox_gotoLastError(notebookTracker, true)
 		});
 
-		// Register a default hotkey: Ctrl+Alt+J (Cmd+Alt+J on macOS)
 		app.commands.addKeyBinding({
-			command: commandID_gotoColumn,
-			keys: ['Accel Alt C'],
-			selector: '.jp-Notebook'
+			command: commandObj_gotoColumn.id,
+			keys: commandObj_gotoColumn.hotkeys,
+			selector: commandObj_gotoColumn.selector
 		});
 
-		// register go to last error's line command
-		commands.addCommand(commandID_gotoLineOnly, {
-			label: 'Read Current Cursor Line',
+		// Register command for jumping to last error's line only
+		commands.addCommand(commandObj_gotoLineOnly.id, {
+			label: commandObj_gotoLineOnly.label,
 			execute: () => this.jvox_gotoLastError(notebookTracker, false)
 		});
 
-		// Register a default hotkey: Ctrl+Alt+J (Cmd+Alt+J on macOS)
 		app.commands.addKeyBinding({
-			command: commandID_gotoLineOnly,
-			keys: ['Accel Alt L'],
-			selector: '.jp-Notebook'
+			command: commandObj_gotoLineOnly.id,
+			keys: commandObj_gotoLineOnly.hotkeys,
+			selector: commandObj_gotoLineOnly.selector
 		});
 
-		palette.addItem({ command: commandID_gotoColumn, category: 'JVox Operations' });
-		palette.addItem({ command: commandID_gotoLineOnly, category: 'JVox Operations' });
+		palette.addItem({ command: commandObj_gotoColumn.id, category: 'JVox Operations' });
+		palette.addItem({ command: commandObj_gotoLineOnly.id, category: 'JVox Operations' });
+	}
+
+	// register verify current line command
+	private jvox_registerVerifyLineCommand(
+		app: JupyterFrontEnd,
+		notebookTracker: INotebookTracker,
+		palette: ICommandPalette) {
+
+		const { commands } = app;
+		const commandObj = JVoxCommandRegistry.getCommandById('jvox:verify-current-line');
+		if (!commandObj) {
+			console.error("JVox command registry: command 'jvox:verify-current-line' not found.");
+			return;
+		}
+		const commandID = commandObj.id;
+
+		commands.addCommand(commandID, {
+			label: commandObj.label,
+			execute: () => this.jvox_readDiagnosticAtCursor(notebookTracker)
+		});
+
+		app.commands.addKeyBinding({
+			command: commandID,
+			keys: commandObj.hotkeys,
+			selector: commandObj.selector
+		});
+
+		palette.addItem({ command: commandID, category: 'JVox Operations' });
+	}
+	
+
+	// register read first diagnostic of cell command
+	private jvox_registerCheckCellSyntaxCommand(
+		app: JupyterFrontEnd,
+		notebookTracker: INotebookTracker,
+		palette: ICommandPalette) {
+		
+		const { commands } = app;
+		const commandObj = JVoxCommandRegistry.getCommandById('jvox:check-cell-syntax');
+		if (!commandObj) {
+			console.error("JVox command registry: command 'jvox:check-cell-syntax' not found.");
+			return;
+		}
+		const commandID = commandObj.id;
+
+		commands.addCommand(commandID, {
+			label: commandObj.label,
+			execute: () => this.jvox_readFirstDiagnosticOfCell(notebookTracker)
+		});
+
+		app.commands.addKeyBinding({
+			command: commandID,
+			keys: commandObj.hotkeys,
+			selector: commandObj.selector
+		});
+
+		palette.addItem({ command: commandID, category: 'JVox Operations' });
 	}
 
 	// register the commands for JVox debug support
@@ -495,7 +652,9 @@ export class jvox_debugSupport {
 		palette: ICommandPalette) {
 
 		this.jvox_registerReadLastErrorCommand(app, notebookTracker, palette);
-		this.jvox_registerGotoLastErrorCommand(app, notebookTracker, palette)
+		this.jvox_registerGotoLastErrorCommand(app, notebookTracker, palette);
+		this.jvox_registerVerifyLineCommand(app, notebookTracker, palette);
+		this.jvox_registerCheckCellSyntaxCommand(app, notebookTracker, palette);
 	}
 
 
@@ -538,6 +697,7 @@ class jvox_diagnostic {
 	public message: string = "";
 	public source: string | undefined = "";
 	public cell: CodeEditor.IEditor | null = null;
+	public type: string = "";
 
 	public startLine: number = -1; //from 0
 	public startCol: number = -1; //from 0
@@ -556,3 +716,7 @@ class jvox_lastError {
 	public traceback: string[] = [];
 
 }
+
+
+
+

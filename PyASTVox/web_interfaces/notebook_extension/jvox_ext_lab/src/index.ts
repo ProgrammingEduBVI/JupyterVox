@@ -19,6 +19,8 @@ import {
     jvox_debugSupport
 } from './jvox_debug_support'
 
+import { jvox_ReadChunk } from './jvox_read_chunk';
+
 /**
  * Initialization data for the jvox-lab-ext-screenreader extension.
  */
@@ -86,6 +88,11 @@ const plugin: JupyterFrontEndPlugin<void> = {
 
 		// add commands for JVox debug support
 		jvox_debug.jvox_registerDebugSupportCommands(app, notebookTracker, palette);
+
+		// register JVox Read Chunk functions
+		const jvoxChunkReader = new jvox_ReadChunk()
+
+		jvoxChunkReader.jvox_registerReadChunkCommands(app, notebookTracker, palette);
 
 	}
 };

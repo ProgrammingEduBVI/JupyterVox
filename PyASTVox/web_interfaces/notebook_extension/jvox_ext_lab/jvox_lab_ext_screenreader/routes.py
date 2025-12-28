@@ -92,14 +92,61 @@ class JVoxAudioRouteHandler(APIHandler):
         encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
 
         # Prepare and send the JSON
-        result = {
+        reply = {
                 "speech": jvox_speech,
                 "audio": encoded_audio
             }
 
         # send the JSON
         self.set_header("Content-Type", "application/json")
-        self.finish(json.dumps(result))
+        self.finish(json.dumps(reply))
+
+class JVoxChunkedReadingRouteHandler(APIHandler):
+    '''
+    JVox endpoint for generating audio MP3 bytes given an input text
+    '''
+    @tornado.web.authenticated
+    def post(self):
+        jvox = jvox_interface.jvox_interface("default")
+        # print("hello jvox:", jvox)
+
+        # extract input information
+        input_data = self.get_json_body()
+        statement = input_data["statement"]
+        cursor_pos = int(input_data["cursor_pos"])
+        command = input_data["command"]
+        chunk_len = int(input_data["chunk_len"])
+
+        result = jvox.chunkify_statement(statement, cursor_pos, command, chunk_len, True)
+        print(result)
+
+        print(result.chunk_to_read)
+
+        if not result.chunk_to_read:
+            audioText = result.error_message
+        else: 
+            audioText = result.chunk_to_read
+            
+
+        print("Chunk to read:", audioText)
+
+        # generate audio bytes
+        mp3_bytes = jvox.gen_mp3_bytes_from_speech_gtts(audioText)
+        
+        # Encode bytes to Base64 string so that we can send bytes in JSON
+        encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
+
+         # Prepare and send the JSON
+        reply = {
+            "new_pos": result.new_pos,
+            "chunk_to_read": result.chunk_to_read,
+            "error_message": result.error_message,
+            "audio": encoded_audio
+            }
+
+        # send the JSON
+        self.set_header("Content-Type", "application/json")
+        self.finish(json.dumps(reply))    
 
 
 def setup_route_handlers(web_app):
@@ -120,6 +167,11 @@ def setup_route_handlers(web_app):
     # add JVox audio endpoint
     jvox_audio_route_pattern = url_path_join(base_url, EXTENSION_URL, "audio")
     handlers = [(jvox_audio_route_pattern, JVoxAudioRouteHandler)]
+    web_app.add_handlers(host_pattern, handlers)
+
+    # Add JVox chunked reading endpoint
+    jvox_chunked_route_pattern = url_path_join(base_url, EXTENSION_URL, "readChunk")
+    handlers = [(jvox_chunked_route_pattern, JVoxChunkedReadingRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     
