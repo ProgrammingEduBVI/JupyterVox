@@ -13,14 +13,17 @@ from pathlib import Path
 # get the path to the interface package
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.append(f"{BASE_DIR}/../../../web_api/")
-sys.path.append(BASE_DIR)
+# sys.path.append(BASE_DIR)
 
 import jvox_interface
 
-# I am not sure why additional Python files in this directory cannot
-# load, although jvox_interface from a different path works correctly.
-# So I am leaving all common variables and classes in this file. 
+# this should be put into a common configuration file
 EXTENSION_URL = "jvox-lab-ext"
+
+# import endpoint files
+from . import jvox_read_chunk
+from . import jvox_audio_support
+from . import jvox_read_line
 
 class HelloRouteHandler(APIHandler):
     # The following decorator should be present on all verb methods (head, get, post,
@@ -35,120 +38,6 @@ class HelloRouteHandler(APIHandler):
             ),
         }))
 
-        
-class JVoxScreenReaderRouteHandler(APIHandler):
-    '''
-    JVox screen reader endpoint for reading a single line
-    '''
-    @tornado.web.authenticated
-    def post(self):
-        jvox = jvox_interface.jvox_interface("default")
-        print("hello jvox:", jvox)
-        
-        # retrieve statement
-        input_data = self.get_json_body()
-        stmt = input_data["stmt"]
-        print("JVox readline web api got statement", stmt)
-
-        # generate speech with jvox
-        jvox_speech = jvox.gen_speech_for_one(stmt, True)
-        print(jvox_speech)
-
-        # generate audio bytes
-        mp3_bytes = jvox.gen_mp3_bytes_from_speech_gtts(jvox_speech)
-        
-
-        # Encode bytes to Base64 string so that we can send bytes in JSON
-        encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
-
-        # Prepare and send the JSON
-        result = {
-                "speech": jvox_speech,
-                "audio": encoded_audio
-            }
-
-        # send the JSON
-        self.set_header("Content-Type", "application/json")
-        self.finish(json.dumps(result))
-
-class JVoxAudioRouteHandler(APIHandler):
-    '''
-    JVox endpoint for generating audio MP3 bytes given an input text
-    '''
-    @tornado.web.authenticated
-    def post(self):
-        jvox = jvox_interface.jvox_interface("default")
-        # print("hello jvox:", jvox)
-        
-        # retrieve statement
-        input_data = self.get_json_body()
-        jvox_speech = input_data["speech"]
-        print("JVox audio web api got speech:", jvox_speech)
-
-        # generate audio bytes
-        mp3_bytes = jvox.gen_mp3_bytes_from_speech_gtts(jvox_speech)
-        
-        # Encode bytes to Base64 string so that we can send bytes in JSON
-        encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
-
-        # Prepare and send the JSON
-        reply = {
-                "speech": jvox_speech,
-                "audio": encoded_audio
-            }
-
-        # send the JSON
-        self.set_header("Content-Type", "application/json")
-        self.finish(json.dumps(reply))
-
-class JVoxChunkedReadingRouteHandler(APIHandler):
-    '''
-    JVox endpoint for generating audio MP3 bytes given an input text
-    '''
-    @tornado.web.authenticated
-    def post(self):
-        jvox = jvox_interface.jvox_interface("default")
-        # print("hello jvox:", jvox)
-
-        # extract input information
-        input_data = self.get_json_body()
-        statement = input_data["statement"]
-        cursor_pos = int(input_data["cursor_pos"])
-        command = input_data["command"]
-        chunk_len = int(input_data["chunk_len"])
-
-        result = jvox.chunkify_statement(statement, cursor_pos, command, chunk_len, True)
-        print(result)
-
-        print(result.chunk_to_read)
-
-        if not result.chunk_to_read:
-            audioText = result.error_message
-        else: 
-            audioText = result.chunk_to_read
-            
-
-        print("Chunk to read:", audioText)
-
-        # generate audio bytes
-        mp3_bytes = jvox.gen_mp3_bytes_from_speech_gtts(audioText)
-        
-        # Encode bytes to Base64 string so that we can send bytes in JSON
-        encoded_audio = base64.b64encode(mp3_bytes).decode('ascii')
-
-         # Prepare and send the JSON
-        reply = {
-            "new_pos": result.new_pos,
-            "chunk_to_read": result.chunk_to_read,
-            "error_message": result.error_message,
-            "audio": encoded_audio
-            }
-
-        # send the JSON
-        self.set_header("Content-Type", "application/json")
-        self.finish(json.dumps(reply))    
-
-
 def setup_route_handlers(web_app):
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
@@ -161,17 +50,17 @@ def setup_route_handlers(web_app):
 
     # add JVox screen reader endpoint
     jvox_screenreader_route_pattern = url_path_join(base_url, EXTENSION_URL, "readline")
-    handlers = [(jvox_screenreader_route_pattern, JVoxScreenReaderRouteHandler)]
+    handlers = [(jvox_screenreader_route_pattern, jvox_read_line.JVoxScreenReaderRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     # add JVox audio endpoint
     jvox_audio_route_pattern = url_path_join(base_url, EXTENSION_URL, "audio")
-    handlers = [(jvox_audio_route_pattern, JVoxAudioRouteHandler)]
+    handlers = [(jvox_audio_route_pattern, jvox_audio_support.JVoxAudioRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     # Add JVox chunked reading endpoint
     jvox_chunked_route_pattern = url_path_join(base_url, EXTENSION_URL, "readChunk")
-    handlers = [(jvox_chunked_route_pattern, JVoxChunkedReadingRouteHandler)]
+    handlers = [(jvox_chunked_route_pattern, read_chunk.JVoxChunkedReadingRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     
