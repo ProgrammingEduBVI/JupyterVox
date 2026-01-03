@@ -7,6 +7,8 @@ except ImportError:
     import warnings
     warnings.warn("Importing 'jvox_lab_ext_screenreader' outside a proper installation.")
     __version__ = "dev"
+
+
 from .routes import setup_route_handlers
 
 
@@ -34,3 +36,6 @@ def _load_jupyter_server_extension(server_app):
     setup_route_handlers(server_app.web_app)
     name = "jvox_lab_ext_screenreader"
     server_app.log.info(f"Registered {name} server extension")
+
+
+

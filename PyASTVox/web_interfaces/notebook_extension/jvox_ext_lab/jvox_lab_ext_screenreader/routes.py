@@ -60,7 +60,7 @@ def setup_route_handlers(web_app):
 
     # Add JVox chunked reading endpoint
     jvox_chunked_route_pattern = url_path_join(base_url, EXTENSION_URL, "readChunk")
-    handlers = [(jvox_chunked_route_pattern, read_chunk.JVoxChunkedReadingRouteHandler)]
+    handlers = [(jvox_chunked_route_pattern, jvox_read_chunk.JVoxChunkedReadingRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     
