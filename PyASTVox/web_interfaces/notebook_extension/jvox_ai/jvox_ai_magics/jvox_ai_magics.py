@@ -18,11 +18,13 @@ import logging
 
 from .jvox_ai_backend import jvox_gemini_interface as ai_interface
 
+from jvox_server_commons import jvox_logging
+
 @magics_class
 class JVoxAiMagics(Magics):
 
     def __init__(self, shell):
-        super().__init__(shell)
+        super().__init__(shell) 
 
     @cell_magic
     def jvoxAI(self, line: str, cell: str) -> Any:
@@ -34,18 +36,23 @@ class JVoxAiMagics(Magics):
         It will take the whole cell input as prompts, and use an AI to gnerate 
         a new cell of code. 
         """
-        print(cell)
+        logger = jvox_logging("ipython", log_to_stderr=False)
+        
+        logger.debug(f"cell text: {cell}")
 
         self.run_ai_cell(cell)
 
     def run_ai_cell(self, cell_text):
+        logger = jvox_logging("ipython", log_to_stderr=False)
 
         # generate the prompt to send to AI
         prompt = self.prepare_prompte_with_error(cell_text)
 
-        print(f"prompt is {prompt}")
+        logger.debug(f"prompt is: {prompt}")
 
         response = ai_interface.generate(prompt)
+
+        logger.debug(f"response is: {response}")
 
         self.shell.set_next_input(response, replace=False)
         return HTML("AI generated code inserted below &#11015;&#65039;")
