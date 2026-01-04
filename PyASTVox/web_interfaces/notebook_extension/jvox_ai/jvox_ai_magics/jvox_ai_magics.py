@@ -40,13 +40,14 @@ class JVoxAiMagics(Magics):
         
         logger.debug(f"cell text: {cell}")
 
-        self.run_ai_cell(cell)
+        # self.run_ai_cell(cell)
+        self.run_ai_cell_with_added_error(cell)
 
     def run_ai_cell(self, cell_text):
         logger = jvox_logging("ipython", log_to_stderr=False)
 
         # generate the prompt to send to AI
-        prompt = self.prepare_prompte_with_error(cell_text)
+        prompt = self.prepare_prompt_with_error(cell_text)
 
         logger.debug(f"prompt is: {prompt}")
 
@@ -57,7 +58,7 @@ class JVoxAiMagics(Magics):
         self.shell.set_next_input(response, replace=False)
         return HTML("AI generated code inserted below &#11015;&#65039;")
 
-    def prepare_prompte(self, cell_text):
+    def prepare_prompt(self, cell_text):
 
         prefix = "Write Python code for:"
 
@@ -67,7 +68,7 @@ class JVoxAiMagics(Magics):
 
         return prompt
 
-    def prepare_prompte_with_error(self, cell_text):
+    def prepare_prompt_with_error(self, cell_text):
 
         prefix = "Write Python code for:"
 
@@ -77,3 +78,31 @@ class JVoxAiMagics(Magics):
         prompt = f"{prefix}, {cell_text}. {postfix}"
 
         return prompt
+
+    def prepare_conversation_with_error(self, cell_text):
+        prefix = "Write Python code for:"
+
+        postfix = """Intentionally include one subtle syntax or logic error commonly found in AI-generated code. 
+        Provide raw code only. No comments, no explanations, no preamble, and no markdown backticks."""
+
+        prompt1 = f"{prefix}, {cell_text}. {postfix}"
+
+        prompt2 = "Please explain the error you hav added."
+
+        prompts = [prompt1, prompt2]
+
+        return prompts
+
+    def run_ai_cell_with_added_error(self, cell_text):
+        logger = jvox_logging("ipython", log_to_stderr=False)
+
+        prompts = self.prepare_conversation_with_error(cell_text)
+        logger.debug("Prompts to send: {prompts}")
+
+        responses = ai_interface.converse(prompts)
+
+        logger.debug(f"responses are: {responses}")
+
+        self.shell.set_next_input(responses[0], replace=False)
+        return HTML("AI generated code inserted below &#11015;&#65039;")
+
