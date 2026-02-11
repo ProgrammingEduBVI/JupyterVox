@@ -165,7 +165,7 @@ class jvox_interface:
     # command should be "next", "pre", "current"
     # I think chunk navigation should be merged with token navigation
     def chunkify_statement(self, stmt, cur_pos, command, chunk_len, verbose):
-        # white to read the space after or inside a chunk.
+        # whether to read the space after or inside a chunk.
         # this is not for leading spaces/indentation, indentation will be read
         read_space = False
         
@@ -229,6 +229,7 @@ class jvox_interface:
             chunks = stmt_chunk.chunk_statement(stmt, cur_pos=0,
                                                 chunk_len=chunk_len,
                                                 verbose=verbose)
+            print("Chunkify results", chunks)
         except Exception as e:
             print("Chunkify failed with exception:", e)
             print("Fallback to tokenization")

@@ -10,6 +10,8 @@ import re
 import sys
 import warnings
 from typing import Any, Optional
+import io
+import tokenize
 
 from IPython.core.magic import Magics, cell_magic, magics_class
 from IPython.display import HTML, JSON, Markdown, Math
@@ -97,12 +99,66 @@ class JVoxAiMagics(Magics):
         logger = jvox_logging("ipython", log_to_stderr=False)
 
         prompts = self.prepare_conversation_with_error(cell_text)
-        logger.debug("Prompts to send: {prompts}")
+        logger.debug(f"Prompts to send: {prompts}")
 
         responses = ai_interface.converse(prompts)
 
         logger.debug(f"responses are: {responses}")
 
         self.shell.set_next_input(responses[0], replace=False)
+        
         return HTML("AI generated code inserted below &#11015;&#65039;")
+
+    def _remove_comments_from_line(line):
+        # Strip inline comments, but not hashes in string literals
+        result = ''
+        prev_toktype = tokenize.INDENT
+        last_col = 0
+        sio = io.StringIO(line)
+        try:
+            for tok in tokenize.generate_tokens(sio.readline):
+                token_type = tok.type
+                token_string = tok.string
+                start_col = tok.start[1]
+
+                if token_type == tokenize.COMMENT:
+                    # If first token is comment, skip whole line
+                    if start_col == 0:
+                        return ''
+                    # Else, discard the comment but keep code before
+                    else:
+                        break
+                elif token_type != tokenize.NL and token_type != tokenize.ENDMARKER:
+                    result += token_string
+                last_col = tok.end[1]
+        except tokenize.TokenError:
+            # Return the line as is if it cannot be tokenized
+            return line
+        return result.rstrip()
+
+    def remove_comments(self, python_code):
+        """
+        Remove all comments from Python code (both full-line and trailing comments).
+        Preserves code and strings with '#' in them.
+        """
+        output_lines = []
+        sio = io.StringIO(python_code)
+        try:
+            for tok in tokenize.generate_tokens(sio.readline):
+                if tok.type == tokenize.COMMENT:
+                    continue
+                elif tok.type == tokenize.NL or tok.type == tokenize.ENDMARKER:
+                    output_lines.append('\n')
+                else:
+                    output_lines.append(tok.string)
+        except tokenize.TokenError:
+            # As fallback, use linewise filter
+            lines = python_code.splitlines()
+            cleaned = [_remove_comments_from_line(line) for line in lines]
+            return '\n'.join(cleaned)
+        # Reconstruct source from tokens (avoiding formatting issues)
+        cleaned_code = ''.join(output_lines)
+        # Remove potentially introduced blank lines
+        cleaned_lines = [line.rstrip() for line in cleaned_code.splitlines()]
+        return '\n'.join(line for line in cleaned_lines if line.strip())
 
