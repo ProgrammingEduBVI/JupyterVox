@@ -18,7 +18,8 @@ from IPython.display import HTML, JSON, Markdown, Math
 
 import logging
 
-from .jvox_ai_backend import jvox_gemini_interface as ai_interface
+#from .jvox_ai_backend import jvox_gemini_interface as ai_interface
+from .jvox_ai_backend import jvox_llama_cpp_interface as ai_interface
 
 from jvox_server_commons import jvox_logging
 
@@ -42,14 +43,15 @@ class JVoxAiMagics(Magics):
         
         logger.debug(f"cell text: {cell}")
 
-        # self.run_ai_cell(cell)
-        self.run_ai_cell_with_added_error(cell)
+        self.run_ai_cell(cell)
+        #self.run_ai_cell_with_added_error(cell)
 
     def run_ai_cell(self, cell_text):
         logger = jvox_logging("ipython", log_to_stderr=False)
 
         # generate the prompt to send to AI
-        prompt = self.prepare_prompt_with_error(cell_text)
+        # prompt = self.prepare_prompt_with_error(cell_text)
+        prompt = self.prepare_prompt(cell_text)
 
         logger.debug(f"prompt is: {prompt}")
 
