@@ -57,7 +57,9 @@ def generate(prompt):
     response_text = response["message"]["content"]
     logger.debug(f"LLama response text:\n{response_text}")
 
-    response_reasoning = response["message"]["reasoning_content"]
-    logger.debug(f"LLama response thinking output:\n{response_reasoning}")
+    response_reasoning = None
+    if "reasoning_content" in response["message"]:
+        response_reasoning = response["message"]["reasoning_content"]
+        logger.debug(f"LLama response thinking output:\n{response_reasoning}")
     
     return response_text
