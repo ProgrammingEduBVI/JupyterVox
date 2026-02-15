@@ -11,11 +11,8 @@ import { requestAPI } from './request';
  //import { EditorView } from '@codemirror/view';
  
 // import { CodeEditor } from '@jupyterlab/codeeditor';
- 
-//import { jvox_speak } from './jvox_audio_request';
 
-//import { jvox_getLineAndCursor, jvox_speak } from './jvox_utils';
-import { jvox_getLineAndCursor, jvox_getSelection } from './jvox_utils';
+import { jvox_getLineAndCursor, jvox_getSelection, jvox_speak } from './jvox_utils';
  
 import { JVoxCommandRegistry } from './jvox_command_registry';
 
@@ -122,7 +119,29 @@ export class jvox_AiExplain {
     {
         console.debug("In jvox_AiNestedCodeExplain.")
 
-        this.jox_getSelectionOrLine(notebookTracker);
+        let text_to_explain = this.jox_getSelectionOrLine(notebookTracker);
+
+        // send line to server extension
+        const dataToSend = { 
+            statement: text_to_explain,
+            command: "nestedCodeExplain",
+         };
+        requestAPI('AIExplain', {
+            body: JSON.stringify(dataToSend),
+            method: 'POST'
+        })
+            .then(reply => {
+                console.log(reply);
+                this.jvox_handleAiExplainResponse(reply);
+            })
+            .catch(reason => {
+                console.error(
+                    `Error on JVox read chunk with ${dataToSend}.\n${reason}`
+                );
+            });
+
+        return;
+
     }
 
     private async jvox_handleAiExplainResponse(
@@ -130,11 +149,12 @@ export class jvox_AiExplain {
     {
         console.debug("JVox AI Expalin response:", response);
 
-        /* // Unpack JSON
+        // Unpack JSON
         const data = await response.json();
       
         // Access the speech in text and audio
-        const speechText = data.chunk_to_read;
+        const speechText = data.speech;
+        console.debug("JVox AI Explain returns speech:", speechText);
         const base64Audio = data.audio;
 
         // play audio
@@ -143,14 +163,6 @@ export class jvox_AiExplain {
         const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
         jvox_speak(audioUrl);
 
-        // set new cursor position
-        const editor: CodeEditor.IEditor = cursorInfo.editor;
-        editor.setCursorPosition({
-            column: data.new_pos,
-            line: cursorInfo.line
-        });
-        editor.focus()
- */
         return;
     }
 

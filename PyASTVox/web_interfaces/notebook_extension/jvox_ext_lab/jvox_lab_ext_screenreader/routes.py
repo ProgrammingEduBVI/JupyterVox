@@ -24,6 +24,7 @@ EXTENSION_URL = "jvox-lab-ext"
 from . import jvox_read_chunk
 from . import jvox_audio_support
 from . import jvox_read_line
+from . import jvox_ai_explanation
 
 class HelloRouteHandler(APIHandler):
     # The following decorator should be present on all verb methods (head, get, post,
@@ -61,6 +62,11 @@ def setup_route_handlers(web_app):
     # Add JVox chunked reading endpoint
     jvox_chunked_route_pattern = url_path_join(base_url, EXTENSION_URL, "readChunk")
     handlers = [(jvox_chunked_route_pattern, jvox_read_chunk.JVoxChunkedReadingRouteHandler)]
+    web_app.add_handlers(host_pattern, handlers)
+
+    # Add JVox AI explanation endpoint
+    jvox_ai_explanation_route_pattern = url_path_join(base_url, EXTENSION_URL, "AIExplain")
+    handlers = [(jvox_ai_explanation_route_pattern, jvox_ai_explanation.JVoxAIExplanationRouteHandler)]
     web_app.add_handlers(host_pattern, handlers)
 
     

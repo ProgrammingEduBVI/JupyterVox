@@ -34,7 +34,7 @@ def prepare_prompt(problem):
 
     prefix = "Write Python code for:"
 
-    postfix = "Provide raw code only. No explanations, no preamble, and no markdown backticks."
+    postfix = "Provide raw code only. No explanations, no preamble, and no markdown backticks. Please use short statements. Please do not use f-strings."
 
     prompt = f"{prefix} {problem}. {postfix}"
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         filename = sys.argv[1]
         data = extract_exercises(filename)
 
-        max_rounds = 3
+        max_rounds = 1 #3
         
         # Demonstrating how to use the returned list
         print(f"Successfully extracted {len(data)} exercises.\n")
@@ -99,5 +99,6 @@ if __name__ == "__main__":
                 # connect to server to generate results
                 response_text = generate(prompt)
                 print(f"Round {i+1} #################:\n {response_text}")
+                ## print(f"{response_text}")
 
             #break
