@@ -83,3 +83,68 @@ export function jvox_getLineAndCursor(notebookTracker: INotebookTracker
         editor: editor,
     };
 }
+
+// get the text being selected at current cursor, returns the selected
+// text. If not selection return empty string; if error, return null.
+export function jvox_getSelection(notebookTracker: INotebookTracker
+): { text: String } | null {
+    const panel = notebookTracker.currentWidget;
+    if (!panel) {
+        console.warn('JVox: No active notebook');
+        return null;
+    }
+
+    const cell = panel.content.activeCell;
+    if (!cell) {
+        console.warn('JVox: No active cell');
+        return null;
+    }
+
+    const editor = cell.editor;
+    if (!editor) {
+        console.warn('JVox: No active editor');
+        return null;
+    }
+
+    const selection = editor.getSelection()
+
+    // Get the start and end positions of the selection
+    const { start, end } = selection;
+
+    // If the selection is collapsed (no actual selection), return null
+    if (start.line === end.line && start.column === end.column) {
+        return null;
+    }
+
+    let selectedText = '';
+    if (start.line === end.line) {
+        // Selection is within a single line
+        const lineText = editor.getLine(start.line);
+        if (lineText !== undefined && lineText !== null) {
+            selectedText = lineText.substring(start.column, end.column);
+        }
+    } else {
+        // Selection spans multiple lines
+        // Get text from the first line
+        const firstLineText = editor.getLine(start.line);
+        if (firstLineText !== undefined && firstLineText !== null) {
+            selectedText += firstLineText.substring(start.column) + '\n';
+        }
+
+        // Get text from the middle lines
+        for (let line = start.line + 1; line < end.line; line++) {
+            const midLineText = editor.getLine(line);
+            if (midLineText !== undefined && midLineText !== null) {
+                selectedText += midLineText + '\n';
+            }
+        }
+
+        // Get text from the last line
+        const lastLineText = editor.getLine(end.line);
+        if (lastLineText !== undefined && lastLineText !== null) {
+            selectedText += lastLineText.substring(0, end.column);
+        }
+    }
+
+    return { text: selectedText };
+}

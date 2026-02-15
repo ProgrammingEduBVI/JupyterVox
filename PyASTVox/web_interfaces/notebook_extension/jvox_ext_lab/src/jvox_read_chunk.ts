@@ -18,7 +18,7 @@ import { jvox_getLineAndCursor, jvox_speak } from './jvox_utils';
  
 import { JVoxCommandRegistry } from './jvox_command_registry';
  
- export class jvox_ReadChunk {
+export class jvox_ReadChunk {
     private chunk_len: number = 3;
 
     // Register "read next chunk", "read previous chunk", and "read current chunk" commands

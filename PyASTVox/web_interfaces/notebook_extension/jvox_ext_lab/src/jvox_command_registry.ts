@@ -55,7 +55,19 @@ export class JVoxCommandRegistry {
             label: 'Read the Chunk at Current Cursor Position',
             selector: '.jp-Notebook.jp-mod-editMode',
             hotkeys: ['Accel Alt K']
-        }
+        },
+        {
+            id: 'jvox:ai-code-explanation',
+            label: 'AI-based code explanation of current line or current selection',
+            selector: '.jp-Notebook.jp-mod-editMode',
+            hotkeys: ['Accel Alt A']
+        },
+        {
+            id: 'jvox:ai-code-nested-operation-explanation',
+            label: 'AI-based explanation of the nested options of current line or current selection',
+            selector: '.jp-Notebook.jp-mod-editMode',
+            hotkeys: ['Accel Alt Q']
+        },
     ];
 
     /**

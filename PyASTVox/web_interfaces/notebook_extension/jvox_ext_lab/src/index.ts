@@ -19,7 +19,8 @@ import {
     jvox_debugSupport
 } from './jvox_debug_support'
 
-import { jvox_ReadChunk } from './jvox_read_chunk';
+// import { jvox_ReadChunk } from './jvox_read_chunk';
+import { jvox_AiExplain } from './jvox_ai_explanation';
 
 /**
  * Initialization data for the jvox-lab-ext-screenreader extension.
@@ -90,9 +91,14 @@ const plugin: JupyterFrontEndPlugin<void> = {
 		jvox_debug.jvox_registerDebugSupportCommands(app, notebookTracker, palette);
 
 		// register JVox Read Chunk functions
-		const jvoxChunkReader = new jvox_ReadChunk()
+		// Disabling read chunk function, as it may conflict with existing screen reader
+		// const jvoxChunkReader = new jvox_ReadChunk()
 
-		jvoxChunkReader.jvox_registerReadChunkCommands(app, notebookTracker, palette);
+		// jvoxChunkReader.jvox_registerReadChunkCommands(app, notebookTracker, palette);
+
+		// register JVox AI explanation functions
+		const jvoxAIExplainer = new jvox_AiExplain()
+		jvoxAIExplainer.jvox_registerAiExplainCommands(app, notebookTracker, palette);
 
 	}
 };
