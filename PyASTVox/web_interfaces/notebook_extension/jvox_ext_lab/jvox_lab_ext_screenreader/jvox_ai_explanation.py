@@ -16,7 +16,7 @@ web_api_path = f"{BASE_DIR}/../../../web_api/"
 if web_api_path not in sys.path:
     sys.path.append(web_api_path)
 
-import jvox_interface  
+from jupytervox.interface import jvox_interface  
 
 class JVoxAIExplanationRouteHandler(APIHandler):
     '''

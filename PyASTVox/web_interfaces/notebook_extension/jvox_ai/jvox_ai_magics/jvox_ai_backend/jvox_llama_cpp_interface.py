@@ -6,7 +6,8 @@ import os
 
 import requests
 
-from jvox_server_commons import jvox_logging
+#from jvox_server_commons import jvox_logging
+from jupytervox.commons import jvox_logging
 
 llama_server_url = ""
 temperature = 0

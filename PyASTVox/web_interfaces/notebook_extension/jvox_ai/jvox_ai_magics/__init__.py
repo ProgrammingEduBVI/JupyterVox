@@ -7,8 +7,11 @@ from IPython import get_ipython
 
 from .jvox_ai_magics import JVoxAiMagics
 
-from jvox_server_commons import jvox_server_config
-from jvox_server_commons import jvox_logging
+#from jvox_server_commons import jvox_server_config
+#from jvox_server_commons import jvox_logging
+
+from jupytervox.commons import config as jvox_server_config
+from jupytervox.commons import jvox_logging
 
 def load_ipython_extension(ipython):
     """ 

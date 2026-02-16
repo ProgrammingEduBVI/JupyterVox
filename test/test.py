@@ -7,8 +7,8 @@ import argparse
 import traceback
 
 # import modules from the jupytervox package
-from jupytervox import utils
-from jupytervox import jvox_screenreader
+from jupytervox.screenreader import utils
+from jupytervox.screenreader import jvox_screenreader
 
 
 def read_test_case(file_handle):

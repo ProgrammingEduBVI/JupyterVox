@@ -6,7 +6,8 @@ import os
 
 from google import genai
 
-from jvox_server_commons import jvox_logging
+#from jvox_server_commons import jvox_logging
+from jupytervox.commons import jvox_logging
 
 gemini_model_name = "gemini-2.5-flash-lite"
 

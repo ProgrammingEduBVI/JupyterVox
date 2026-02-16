@@ -25,7 +25,7 @@ from pathlib import Path
 from ..screenreader import utils
 
 # import JVox speech generator
-from ..screenreader.screenreader import jvox_screenreader
+from ..screenreader import jvox_screenreader
 
 # import token/lexeme navigation packages
 from ..parser.token_navigation import token_navigation

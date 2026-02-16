@@ -9,7 +9,7 @@ import traceback
 # for ASTVox_Anltr4
 # import sys
 # sys.path.append("../ASTVox_Antlr4/src/antlr2pyast/")
-from ..parser.converter import antlr2pyast
+from ..parser import antlr2pyast
 
 # Speech generation mixin classes, which have the actual implementation
 # for gen_ast_XXX functions
