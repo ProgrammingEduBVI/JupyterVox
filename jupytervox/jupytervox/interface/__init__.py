@@ -1,1 +1,1 @@
-from .web_interface import jvox_interface
+from .jvox_interface import jvox_interface
