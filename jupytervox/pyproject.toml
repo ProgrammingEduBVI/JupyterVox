@@ -1,0 +1,20 @@
+[project]
+name = "jupytervox"
+version = "0.1.0"
+description = "JupyterVox: Python code screen reader and accessibility tool"
+authors = [
+    {name = "WWang"}
+]
+requires-python = ">=3.8"
+dependencies = [
+    "gtts",
+    "antlr4-python3-runtime",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
