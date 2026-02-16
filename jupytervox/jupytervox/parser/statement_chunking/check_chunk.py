@@ -6,8 +6,8 @@ import ast
 
 # antlr4 packages
 import antlr4
-from antlr_parser.Python3Lexer import Python3Lexer
-from antlr_parser.Python3Parser import Python3Parser
+from ..antlr_parser.Python3Lexer import Python3Lexer
+from ..antlr_parser.Python3Parser import Python3Parser
 
 # check if an ast.BinOp readable
 # only basic ones can be read

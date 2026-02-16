@@ -14,31 +14,32 @@ from gtts import gTTS
 import sys
 from pathlib import Path
 
+# from jupytervox.jupytervox import screenreader
+
 # generate the path to JVox packages
-BASE_DIR = Path(__file__).resolve().parent
-sys.path.append(f"{BASE_DIR}/../../pyastvox/")
-sys.path.append(f"{BASE_DIR}/../../../ASTVox_Antlr4/src/antlr2pyast/")
+# BASE_DIR = Path(__file__).resolve().parent
+# sys.path.append(f"{BASE_DIR}/../../pyastvox/")
+# sys.path.append(f"{BASE_DIR}/../../../ASTVox_Antlr4/src/antlr2pyast/")
 
 # load the Vox parser utilities
-import utils
+from ..screenreader import utils
 
 # import JVox speech generator
-from jvox_screenreader import jvox_screenreader
+from ..screenreader.screenreader import jvox_screenreader
 
 # import token/lexeme navigation packages
-from token_navigation import token_navigation
-from token_navigation import lexeme_navigation as lex_nav
+from ..parser.token_navigation import token_navigation
+from ..parser.token_navigation import lexeme_navigation as lex_nav
 
 # import single line parsing checking packages
-from debug_support import single_line_check as one_chk
-from debug_support import code_snippet_check as snippet_chk
-from debug_support.runtime_error_support import entry_point as rt_support
+from ..parser.debug_support import single_line_check as one_chk
+from ..parser.debug_support import code_snippet_check as snippet_chk
+from ..parser.debug_support.runtime_error_support import entry_point as rt_support
 
 # import chunked reading packages
-from statement_chunking import statement_chunking as stmt_chunk
+from ..parser.statement_chunking import statement_chunking as stmt_chunk
 
-from jvox_server_commons import jvox_gemini_interface
-from jvox_server_commons import jvox_gemini_interface as ai_interface
+from ..commons.ai_backend import gemini_interface as ai_interface
 #from jvox_server_commons import jvox_llama_cpp_interface as ai_interface
 
 class jvox_interface:

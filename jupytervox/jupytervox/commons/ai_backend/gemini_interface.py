@@ -6,7 +6,7 @@ import os
 
 from google import genai
 
-from ..jvox_logging import jvox_logging
+from ..logging import jvox_logging
 
 gemini_model_name = "gemini-2.5-flash-lite"
 

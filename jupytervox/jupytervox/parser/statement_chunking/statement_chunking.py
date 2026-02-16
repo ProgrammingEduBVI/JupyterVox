@@ -4,12 +4,12 @@ Code for breaking down a statement into smaller readable chunks.
 
 # antlr4 packages
 import antlr4
-from antlr_parser.Python3Lexer import Python3Lexer
-from antlr_parser.Python3Parser import Python3Parser
+from ..antlr_parser.Python3Lexer import Python3Lexer
+from ..antlr_parser.Python3Parser import Python3Parser
 
 # AST tree generation/conversion packages
-from converter import antlr2pyast
-from converter import tools
+from ..converter import antlr2pyast
+from ..converter import tools
 import ast
 
 # import check_chunk for readability check

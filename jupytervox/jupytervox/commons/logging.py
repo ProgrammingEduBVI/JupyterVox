@@ -7,7 +7,7 @@ import inspect
 import sys
 import os
 
-from . import jvox_server_config as jc
+from . import config as jc
 
 class jvox_logging:
     """
