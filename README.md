@@ -27,8 +27,11 @@ pip install jupyterlab
 Install ANTLR4 runtime for Python:
 
 ```bash
+# install ANTLR4
 pip install antlr4-tools
+# download ANTLR4 Java pacakge
 antlr4
+# install Python run-time for ANTLR4
 pip install antlr4-python3-runtime
 ```
 
