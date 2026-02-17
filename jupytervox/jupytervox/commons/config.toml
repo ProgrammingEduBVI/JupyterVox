@@ -1,4 +1,0 @@
-[logs]
-ipython = "/tmp/jvox_ipython.log"
-general = "/tmp/jvox_general.log"
-JupyterLab = "/tmp/jvox_jlab.log"
