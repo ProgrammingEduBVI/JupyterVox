@@ -8,7 +8,7 @@ import base64
 import tornado
 from jupyter_server.base.handlers import APIHandler
 
-import sys
+""" import sys
 from pathlib import Path
 # get the path to the interface package
 BASE_DIR = Path(__file__).resolve().parent
@@ -16,7 +16,9 @@ web_api_path = f"{BASE_DIR}/../../../web_api/"
 if web_api_path not in sys.path:
     sys.path.append(web_api_path)
 
-import jvox_interface   
+import jvox_interface    """
+
+from jupytervox.interface import jvox_interface 
 
 class JVoxChunkedReadingRouteHandler(APIHandler):
     '''
@@ -24,7 +26,7 @@ class JVoxChunkedReadingRouteHandler(APIHandler):
     '''
     @tornado.web.authenticated
     def post(self):
-        jvox = jvox_interface.jvox_interface("default")
+        jvox = jvox_interface("default")
         # print("hello jvox:", jvox)
 
         # extract input information

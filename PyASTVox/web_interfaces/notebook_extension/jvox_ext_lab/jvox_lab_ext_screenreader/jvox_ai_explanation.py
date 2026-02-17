@@ -24,7 +24,7 @@ class JVoxAIExplanationRouteHandler(APIHandler):
     '''
     @tornado.web.authenticated
     def post(self):
-        jvox = jvox_interface.jvox_interface("default")
+        jvox = jvox_interface("default")
         print("hello jvox:", jvox)
         
         # retrieve statement and command

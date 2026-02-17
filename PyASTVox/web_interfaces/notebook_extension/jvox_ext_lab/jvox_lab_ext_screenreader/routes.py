@@ -7,7 +7,7 @@ import tornado
 
 from gtts import gTTS
 
-# import JVox packages
+""" # import JVox packages
 import sys
 from pathlib import Path
 # get the path to the interface package
@@ -16,6 +16,9 @@ sys.path.append(f"{BASE_DIR}/../../../web_api/")
 # sys.path.append(BASE_DIR)
 
 import jvox_interface
+ """
+
+# from jupytervox.interface import jvox_interface 
 
 # this should be put into a common configuration file
 EXTENSION_URL = "jvox-lab-ext"
