@@ -1,4 +1,4 @@
-# jvox_lab_ext_screenreader
+# jvox_jlab_ext
 
 [![Github Actions Status](https:github.com/ProgrammingEduBVI/JupyterVox.git/workflows/Build/badge.svg)](https:github.com/ProgrammingEduBVI/JupyterVox.git/actions/workflows/build.yml)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/https:github.com/ProgrammingEduBVI/JupyterVox.git/main?urlpath=lab)
@@ -6,8 +6,8 @@
 
 A JupyterLab extension for JVox for screen reading
 
-This extension is composed of a Python package named `jvox_lab_ext_screenreader`
-for the server extension and a NPM package named `jvox-lab-ext-screenreader`
+This extension is composed of a Python package named `jvox_jlab_ext`
+for the server extension and a NPM package named `jvox-jlab-ext`
 for the frontend extension.
 
 ## Requirements
@@ -19,7 +19,7 @@ for the frontend extension.
 To install the extension, execute:
 
 ```bash
-pip install jvox_lab_ext_screenreader
+pip install jvox_jlab_ext
 ```
 
 ## Uninstall
@@ -27,7 +27,7 @@ pip install jvox_lab_ext_screenreader
 To remove the extension, execute:
 
 ```bash
-pip uninstall jvox_lab_ext_screenreader
+pip uninstall jvox_jlab_ext
 ```
 
 ## Troubleshoot
@@ -58,7 +58,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Change directory to the jvox_lab_ext_screenreader directory
+# Change directory to the jvox_jlab_ext directory
 
 # Set up a virtual environment and install package in development mode
 python -m venv .venv
@@ -68,7 +68,7 @@ pip install --editable ".[dev,test]"
 # Link your development version of the extension with JupyterLab
 jupyter labextension develop . --overwrite
 # Server extension must be manually installed in develop mode
-jupyter server extension enable jvox_lab_ext_screenreader
+jupyter server extension enable jvox_jlab_ext
 
 # Rebuild extension Typescript source after making changes
 # IMPORTANT: Unlike the steps above which are performed only once, do this step
@@ -97,13 +97,13 @@ jupyter lab build --minimize=False
 
 ```bash
 # Server extension must be manually disabled in develop mode
-jupyter server extension disable jvox_lab_ext_screenreader
-pip uninstall jvox_lab_ext_screenreader
+jupyter server extension disable jvox_jlab_ext
+pip uninstall jvox_jlab_ext
 ```
 
 In development mode, you will also need to remove the symlink created by `jupyter labextension develop`
 command. To find its location, you can run `jupyter labextension list` to figure out where the `labextensions`
-folder is located. Then you can remove the symlink named `jvox-lab-ext-screenreader` within that folder.
+folder is located. Then you can remove the symlink named `jvox-jlab-ext` within that folder.
 
 ### Testing the extension
 
@@ -122,7 +122,7 @@ jupyter labextension develop . --overwrite
 To execute them, run:
 
 ```sh
-pytest -vv -r ap --cov jvox_lab_ext_screenreader
+pytest -vv -r ap --cov jvox_jlab_ext
 ```
 
 #### Frontend tests
