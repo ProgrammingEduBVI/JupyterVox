@@ -19,7 +19,7 @@ from IPython.display import HTML, JSON, Markdown, Math
 import logging
 
 #from .jvox_ai_backend import jvox_gemini_interface as ai_interface
-from .jvox_ai_backend import jvox_llama_cpp_interface as ai_interface
+from jupytervox.commons import llama_cpp_interface as ai_interface
 
 #from jvox_server_commons import jvox_logging
 from jupytervox.commons import jvox_logging

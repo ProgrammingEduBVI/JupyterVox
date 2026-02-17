@@ -39,7 +39,8 @@ from ..parser.debug_support.runtime_error_support import entry_point as rt_suppo
 # import chunked reading packages
 from ..parser.statement_chunking import statement_chunking as stmt_chunk
 
-from ..commons.ai_backend import gemini_interface as ai_interface
+# from ..commons.ai_backend import gemini_interface as ai_interface
+from ..commons.ai_backend import llama_cpp_interface as ai_interface
 #from jvox_server_commons import jvox_llama_cpp_interface as ai_interface
 
 class jvox_interface:
