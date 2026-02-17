@@ -142,7 +142,7 @@ You should now see JVox features enabled.
 
 ## 7. Troubleshooting
 
-- If you do not see JVox UI or features, restart JupyterLab and confirm the extension is enabled.
+- If you do not see JVox commands or features, restart JupyterLab and confirm the extension is enabled.
 - For developer debugging, run `jupyter lab --dev-mode` and check browser console/logs.
 - Logs are at,
 1. Web browser console
