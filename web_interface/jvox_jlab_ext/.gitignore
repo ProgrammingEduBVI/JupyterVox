@@ -7,9 +7,9 @@ node_modules/
 *.egg-info/
 .ipynb_checkpoints
 *.tsbuildinfo
-jvox_lab_ext_screenreader/labextension
+jvox_jlab_ext/labextension
 # Version file is handled by hatchling
-jvox_lab_ext_screenreader/_version.py
+jvox_jlab_ext/_version.py
 
 # Integration tests
 ui-tests/test-results/

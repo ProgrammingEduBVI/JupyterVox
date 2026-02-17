@@ -1,5 +1,5 @@
 {
-    "name": "jvox-lab-ext-screenreader",
+    "name": "jvox-jlab-ext",
     "version": "0.1.0",
     "description": "A JupyterLab extension for JVox for screen reading",
     "keywords": [
@@ -39,7 +39,7 @@
         "clean": "jlpm clean:lib",
         "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
         "clean:lintcache": "rimraf .eslintcache .stylelintcache",
-        "clean:labextension": "rimraf jvox_lab_ext_screenreader/labextension jvox_lab_ext_screenreader/_version.py",
+        "clean:labextension": "rimraf jvox_jlab_ext/labextension jvox_jlab_ext/_version.py",
         "clean:all": "jlpm clean:lib && jlpm clean:labextension && jlpm clean:lintcache",
         "eslint": "jlpm eslint:check --fix",
         "eslint:check": "eslint . --cache --ext .ts,.tsx",
@@ -108,12 +108,12 @@
                     "pip"
                 ],
                 "base": {
-                    "name": "jvox_lab_ext_screenreader"
+                    "name": "jvox_jlab_ext"
                 }
             }
         },
         "extension": true,
-        "outputDir": "jvox_lab_ext_screenreader/labextension",
+        "outputDir": "jvox_jlab_ext/labextension",
         "schemaDir": "schema"
     },
     "eslintIgnore": [

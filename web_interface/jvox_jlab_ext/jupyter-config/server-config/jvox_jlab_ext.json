@@ -1,7 +1,7 @@
 {
   "ServerApp": {
     "jpserver_extensions": {
-      "jvox_lab_ext_screenreader": true
+      "jvox_jlab_ext": true
     }
   }
 }

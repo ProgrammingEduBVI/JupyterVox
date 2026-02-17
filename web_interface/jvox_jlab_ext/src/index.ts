@@ -23,10 +23,10 @@ import {
 import { jvox_AiExplain } from './jvox_ai_explanation';
 
 /**
- * Initialization data for the jvox-lab-ext-screenreader extension.
+ * Initialization data for the jvox-jlab-ext extension.
  */
 const plugin: JupyterFrontEndPlugin<void> = {
-    id: 'jvox-lab-ext-screenreader:plugin',
+    id: 'jvox-jlab-ext:plugin',
     description: 'A JupyterLab extension for JVox for screen reading',
     autoStart: true,
     requires: [INotebookTracker, ICommandPalette, ILSPDocumentConnectionManager],
@@ -38,17 +38,17 @@ const plugin: JupyterFrontEndPlugin<void> = {
 	lspManager: ILSPDocumentConnectionManager,
 	settingRegistry: ISettingRegistry | null
     ) => {
-		console.log('JupyterLab extension jvox-lab-ext-screenreader is activated!');
+		console.log('JupyterLab extension jvox-jlab-ext is activated!');
 
 		// initialize setting registry
 		if (settingRegistry) {
 			settingRegistry
 				.load(plugin.id)
 				.then(settings => {
-					console.log('jvox-lab-ext-screenreader settings loaded:', settings.composite);
+					console.log('jvox-jlab-ext settings loaded:', settings.composite);
 				})
 				.catch(reason => {
-					console.error('Failed to load settings for jvox-lab-ext-screenreader.', reason);
+					console.error('Failed to load settings for jvox-jlab-ext.', reason);
 				});
 		}
 
@@ -59,7 +59,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
 			})
 			.catch(reason => {
 				console.error(
-					`The jvox_lab_ext_screenreader server extension appears to be missing.\n${reason}`
+					`The jvox_jlab_ext server extension appears to be missing.\n${reason}`
 				);
 			});
 

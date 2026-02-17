@@ -1,5 +1,0 @@
-{
-  "packageManager": "python",
-  "packageName": "jvox_lab_ext_screenreader",
-  "uninstallInstructions": "Use your Python package manager (pip, conda, etc.) to uninstall the package jvox_lab_ext_screenreader"
-}

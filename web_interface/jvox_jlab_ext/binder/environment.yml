@@ -1,10 +1,10 @@
-# a mybinder.org-ready environment for demoing jvox_lab_ext_screenreader
+# a mybinder.org-ready environment for demoing jvox_jlab_ext
 # this environment may also be used locally on Linux/MacOS/Windows, e.g.
 #
 #   conda env update --file binder/environment.yml
-#   conda activate jvox-lab-ext-screenreader-demo
+#   conda activate jvox-jlab-ext-demo
 #
-name: jvox-lab-ext-screenreader-demo
+name: jvox-jlab-ext-demo
 
 channels:
   - conda-forge
