@@ -19,7 +19,7 @@ Install [`pip` requirements](#required-python-packages) and system requirements 
 ### Required Python Packages
 
 ```bash
-pip install jupyterlab
+pip install jupyterlab jupyterlab-lsp
 ```
 
 ### ANTLR4 (for Python)
@@ -37,35 +37,53 @@ pip install antlr4-python3-runtime
 
 Note that antlr4 v4.13.1 was used for development
 
----
-
-## 3. Install `jvox_ai_magics`
-
-[`jvox_ai_magics`](https://github.com/ProgrammingEduBVI/JupyterVox) is a package that provides JVox AI magic commands for Jupyter.
+### Clone this project
 
 ```bash
-pip install -e jvox_ai_magics
+git clone https://github.com/ProgrammingEduBVI/JupyterVox.git
+```
+
+---
+
+## 3. Install `jupytervox`
+
+[`juptervox`](https://github.com/ProgrammingEduBVI/JupyterVox/jupytervox/) is a package that provides JVox AI magic commands for Jupyter. In JupyterVox repo root directory, 
+
+```bash
+pip install -e jupytervox
+```
+
+---
+
+## 4. Install `jvox_ai_magics`
+
+[`jvox_ai_magics`](https://github.com/ProgrammingEduBVI/JupyterVox/web_interface/) is a package that provides JVox AI magic commands for Jupyter. In JupyterVox repo root directory, 
+
+```bash
+pip install -e web_interface/jvox_ai
 ```
 
 Add the `jvox_ai_magics` to iPython extension list for autoloading
 
 In iPython's configuration file (usually at `~/.ipython/profile_default/ipython_config.py`), add the following lines:
 
-    ```python
-    c.InteractiveShellApp.extensions = [
+```python
+c.InteractiveShellApp.extensions = [
         'jvox_ai_magics'
-    ]
-    ```
+]
+```
 
 Please see the README file in `jvox_ai_magics` for more information.
 
 ---
 
-## 4. Install `jvox_jlab_ext` JupyterLab Extension
+## 5. Install `jvox_jlab_ext` JupyterLab Extension
 
-This extension enables screen reader and accessibility features in JupyterLab.
+This extension enables screen reading and debugging accessibility features in JupyterLab.
 
 ### A. Install the Python package (with/for development):
+
+In JupyterVox repo root directory,
 
 ```bash
 cd web_interface/jvox_jlab_ext
@@ -77,8 +95,6 @@ pip install -e .
 ```bash
 # Required to identify the project for Yarn 3
 touch yarn.lock
-# Install package in development mode
-pip install -e .
 # Link your development version of the extension with JupyterLab
 jupyter labextension develop . --overwrite
 # Rebuild extension Typescript source after making changes
@@ -88,7 +104,7 @@ jlpm run build
 
 ---
 
-## 5. Verify the JVox Extension in JupyterLab
+## 6. Verify the JVox Extension in JupyterLab
 
 JupyterLab should automatically detect and enable the extension after install.
 
@@ -102,7 +118,7 @@ jupyter server extension list
 ```
 ---
 
-## 6. AI backend
+## 7. AI backend
 
 ### A. llama.cpp
 This project was developed using the `llama-3.2-8B-instruct:FP8` model running with `llama.cpp`. By default, the llama.cpp server URL is set to `http://127.0.0.1:4590`. To specify a different URL for your `llama.cpp` server, set the following environment variable:
@@ -121,7 +137,7 @@ Support for other LLMs and GUI configuration will be added in the future.
 
 ---
 
-## 7. Launch JupyterLab
+## 8. Launch JupyterLab
 
 JupyterVox requires a configuration file to specify logging parameters.
 An example configuration file, `jvox_config.toml`, is provided in this repository. To allow JupyterVox to locate and use your configuration file, please set the following environment variable to the path of your `jvox_config.toml`:
@@ -140,7 +156,7 @@ You should now see JVox features enabled.
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 - If you do not see JVox commands or features, restart JupyterLab and confirm the extension is enabled.
 - For developer debugging, run `jupyter lab --dev-mode` and check browser console/logs.
@@ -151,7 +167,7 @@ You should now see JVox features enabled.
 
 ---
 
-## 9. Uninstallation
+## 10. Uninstallation
 
 To remove the extension:
 

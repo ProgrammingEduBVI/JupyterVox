@@ -9,6 +9,7 @@ requires-python = ">=3.8"
 dependencies = [
     "gtts",
     "antlr4-python3-runtime",
+    "google-genai",
 ]
 
 [build-system]
